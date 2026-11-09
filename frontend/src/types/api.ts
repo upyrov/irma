@@ -17,7 +17,7 @@ export type TeamDto = {
   members: UserDto[];
 };
 
-// У ТЗ не розписано, що лежить у ProjectDto.Members — найлогічніше юзер + роль
+
 export type ProjectMemberDto = {
   user: UserDto;
   role: ProjectRole;
@@ -26,7 +26,7 @@ export type ProjectMemberDto = {
 export type ProjectDto = {
   id: Guid;
   name: string;
-  description: string;
+  description: string | null;
   template: ProjectTemplate;
   teamId: Guid;
   members: ProjectMemberDto[];
@@ -36,7 +36,7 @@ export type SprintDto = {
   id: Guid;
   name: string;
   goal: string | null;
-  startDate: string | null; // DateTimeOffset приходить як ISO-рядок
+  startDate: string | null;
   endDate: string | null;
   status: SprintStatus;
   projectId: Guid;
@@ -53,7 +53,7 @@ export type IssueDto = {
   id: Guid;
   issueKey: string;
   title: string;
-  description: string;
+  description: string | null;
   issueType: IssueType;
   priority: Priority;
   storyPoints: number | null;
