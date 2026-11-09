@@ -1,9 +1,9 @@
 import { Logo } from '#/layout/sidebar/componennts/logo';
 import { HomeProjectsNav } from '#/layout/sidebar/componennts/homeProjetcsNav';
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { HomeProjectsTeamList } from '#/layout/sidebar/componennts/homeProjectsTeamlist';
+import { createFileRoute } from '@tanstack/react-router'
 import { UserMenu } from '#/layout/sidebar/componennts/userMenu';
 import { ProjectList } from '#/layout/sidebar/componennts/projectList';
+import { HomeProjectsTeamList } from '#/layout/sidebar/componennts/homeProjectsTeamList';
 
 export const Route = createFileRoute('/')({ component: Home })
 

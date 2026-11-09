@@ -55,30 +55,47 @@ export const projects: Project[] = [
   },
 ]
 
-export const teams = [
-    {
+type TeamMember = {
+  id: number
+  name: string
+  usertag: string
+  initials: string
+  color: string
+}
+
+type Team = {
+  id: number
+  name: string
+  color: string
+  members: TeamMember[]
+}
+
+export const teams: Team[] = [
+  {
     id: 1,
     name: 'HaU',
-    color: '#5234ff',
-        members: [
-      { id: 4, initials: 'ДС', color: '#7C3AED' },
-      { id: 5, initials: 'НП', color: '#D97706' },
+    color: '#5234FF',
+    members: [
+      { id: 4, name: 'Саша Дорошенко', usertag: 'saddd', initials: 'СД', color: '#7C3AED' },
+      { id: 5, name: 'Назар Петренко', usertag: 'nazar.p', initials: 'НП', color: '#D97706' },
     ],
   },
-      {
+  {
     id: 2,
     name: 'Vlad',
-    color: '#aeffc8',
-        members: [
-      { id: 4, initials: 'ДС', color: '#7C3AED' },
-      { id: 5, initials: 'НП', color: '#D97706' },
-      { id: 6, initials: 'НП', color: '#D97706' },
+    color: '#1F7A4D',
+    members: [
+      { id: 4, name: 'Саша Дорошенко', usertag: 'saddd', initials: 'СД', color: '#7C3AED' },
+      { id: 5, name: 'Назар Петренко', usertag: 'nazar.p', initials: 'НП', color: '#D97706' },
+      { id: 7, name: 'Наталія Павленко', usertag: 'natali', initials: 'НП', color: '#A8326B' },
     ],
   },
   {
     id: 3,
     name: 'Kai',
     color: '#9B1C1C',
-    members: [{ id: 6, initials: 'ВР', color: '#0E7490' }],
-  }
+    members: [
+      { id: 6, name: 'Віктор Руденко', usertag: 'vrud', initials: 'ВР', color: '#0E7490' },
+    ],
+  },
 ]

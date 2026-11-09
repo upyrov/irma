@@ -1,5 +1,6 @@
 import { projects } from "#/tempData"
 
+
 export const ProjectList = () => {
     return (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
