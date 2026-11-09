@@ -6,7 +6,7 @@ export const Logo = () => {
         <ellipse cx="12" cy="12" rx="6.5" ry="3" transform="rotate(-30 12 12)" />
         <circle cx="12" cy="12" r="1.6" fill="#FFFFFF" stroke="none" />
       </svg>
-      <span className="font-['Manrope',sans-serif] text-xl font-extrabold tracking-[-0.02em]">Orbit</span>
+      <span className="font-['Manrope',sans-serif] text-xl font-extrabold text-black tracking-[-0.02em]">Orbit</span>
     </a>
     )
 }

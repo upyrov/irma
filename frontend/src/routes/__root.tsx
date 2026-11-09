@@ -1,5 +1,6 @@
 import {
   HeadContent,
+  Link,
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
@@ -33,7 +34,20 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: NotFound,
 })
+
+function NotFound() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F4F5F7] text-[#16181D]">
+      <h1 className="text-4xl font-bold">404</h1>
+      <p className="text-[#5B6270]">Сторінку не знайдено</p>
+      <Link to="/" className="font-semibold text-[#2F5BEA] hover:text-[#1E40B8]">
+        На головну
+      </Link>
+    </div>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
