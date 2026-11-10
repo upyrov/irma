@@ -1,0 +1,124 @@
+import { teams } from "#/tempData";
+
+type Props = {
+    setIsOpenNewProject: (value: boolean) => void,
+}
+
+export const NewProject = ({setIsOpenNewProject}: Props) => {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#16181D]/55 p-4">
+            <form
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cp-title"
+    className="flex w-full max-w-[760px] flex-col rounded-[18px] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.3)]"
+  >
+    <div className="flex items-start justify-between gap-4 px-7 pt-6">
+      <div>
+        <h2 id="cp-title" className="mb-1.5 font-['Manrope',sans-serif] text-2xl font-extrabold tracking-[-0.02em]">
+          Новий проєкт
+        </h2>
+        <p className="text-sm text-[#5B6270]">Колонки дошки створяться автоматично за обраним шаблоном.</p>
+      </div>
+      <button
+        type="button"
+        aria-label="Закрити"
+        className="flex h-10 w-10 items-center justify-center rounded-[10px] text-[#5B6270] hover:bg-[#EEF0F4]"
+        onClick={() => setIsOpenNewProject(false)}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </div>
+
+    <div className="flex flex-col gap-5 px-7 py-6">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="cp-name" className="text-sm font-semibold">Назва проєкту</label>
+          <input
+            id="cp-name"
+            type="text"
+            className="h-11 rounded-[10px] border border-[#D3D7DE] px-3.5 text-[15px] text-[#16181D] outline-none focus:border-[#2F5BEA] focus:ring-[3px] focus:ring-[#2F5BEA]/20"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="cp-team" className="text-sm font-semibold">Команда</label>
+          <select
+            id="cp-team"
+            className="h-11 rounded-[10px] border border-[#D3D7DE] bg-white px-3 text-[15px] text-[#16181D] outline-none focus:border-[#2F5BEA] focus:ring-[3px] focus:ring-[#2F5BEA]/20"
+          >
+            {teams.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="cp-desc" className="text-sm font-semibold">
+          Опис <span className="font-normal text-[#5B6270]">— необов'язково</span>
+        </label>
+        <textarea
+          id="cp-desc"
+          rows={3}
+          placeholder="Коротко: що робимо і для кого"
+          className="resize-y rounded-[10px] border border-[#D3D7DE] px-3.5 py-3 text-[15px] text-[#16181D] outline-none focus:border-[#2F5BEA] focus:ring-[3px] focus:ring-[#2F5BEA]/20"
+        />
+      </div>
+
+      <fieldset className="m-0 flex flex-col gap-2.5 border-none p-0">
+        <legend className="mb-2.5 p-0 text-sm font-semibold">Шаблон</legend>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3">
+          {[
+            { value: 'Scrum', title: 'Scrum', text: 'Спринти, беклог і планування. Дошка показує лише активний спринт.', columns: ['To Do', 'In Progress', 'Done'] },
+            { value: 'Kanban', title: 'Kanban', text: 'Безперервний потік без спринтів. На дошці — всі неархівні задачі.', columns: ['Backlog', 'Selected', 'In Progress', 'Done'] },
+            { value: 'BugTracking', title: 'Bug Tracking', text: 'Тріаж і виправлення багів. Без спринтів, баги сортуються за пріоритетом.', columns: ['New', 'Triage', 'In Progress', 'Fixed', 'Verified'] },
+          ].map((tpl) => (
+            <label
+              key={tpl.value}
+              className="flex cursor-pointer flex-col gap-3 rounded-[14px] border border-[#D3D7DE] bg-white p-4 has-[:checked]:border-[#2F5BEA] has-[:checked]:bg-[#F3F6FE] has-[:checked]:ring-1 has-[:checked]:ring-[#2F5BEA] has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-[#2F5BEA]/35"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-base font-bold">{tpl.title}</span>
+                <input
+                  type="radio"
+                  name="template"
+                  value={tpl.value}
+                  defaultChecked={tpl.value === 'Scrum'}
+                  className="m-0 h-[18px] w-[18px] accent-[#2F5BEA]"
+                />
+              </div>
+              <span className="text-[13px] leading-normal text-[#3A404B]">{tpl.text}</span>
+              <div aria-hidden="true" className="flex flex-wrap gap-1">
+                {tpl.columns.map((c) => (
+                  <span key={c} className="rounded-md bg-[#EEF0F4] px-2 py-[3px] text-[11px] font-semibold text-[#3A404B]">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    </div>
+
+    <div className="flex flex-wrap justify-end gap-2.5 rounded-b-[18px] border-t border-[#E3E6EB] bg-[#FAFBFC] px-7 py-4">
+      <button
+        type="button"
+        className="h-11 rounded-[10px] border border-[#D3D7DE] bg-white px-[18px] text-sm font-semibold text-[#16181D] hover:bg-[#F8F9FB]"
+      >
+        Скасувати
+      </button>
+      <button
+        type="submit"
+        className="h-11 rounded-[10px] bg-[#2F5BEA] px-5 text-sm font-semibold text-white hover:bg-[#1E40B8]"
+      >
+        Створити проєкт
+      </button>
+    </div>
+  </form>
+        </div>
+  
+);
+}
