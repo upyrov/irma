@@ -15,11 +15,11 @@ function RouteComponent() {
     setError('')
   }
     return (
-    <div className="flex min-h-screen flex-wrap bg-[#F4F5F7] font-['Inter',system-ui,sans-serif] text-[#16181D]">
-      <div className="box-border flex flex-[1_1_520px] flex-col justify-between gap-12 bg-[#16181D] px-14 py-12 text-white">
+    <div className="flex min-h-screen flex-wrap bg-page font-['Inter',system-ui,sans-serif] text-ink">
+      <div className="box-border flex flex-[1_1_520px] flex-col justify-between gap-12 bg-ink px-14 py-12 text-white">
         <div className="flex items-center gap-2.5">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.8" aria-hidden="true">
-            <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="#2F5BEA" stroke="none" />
+            <rect x="2.5" y="2.5" width="19" height="19" rx="6" className="fill-primary" stroke="none" />
             <ellipse cx="12" cy="12" rx="6.5" ry="3" transform="rotate(-30 12 12)" />
             <circle cx="12" cy="12" r="1.6" fill="#FFFFFF" stroke="none" />
           </svg>
@@ -52,7 +52,7 @@ function RouteComponent() {
         <form onSubmit={handleSubmit} className="flex w-full max-w-[400px] flex-col gap-5">
           <div>
             <h2 className="mb-2 font-['Manrope',sans-serif] text-[30px] font-extrabold tracking-[-0.02em]">Реєстрація</h2>
-            <p className="text-[15px] text-[#5B6270]">Це займе менше хвилини.</p>
+            <p className="text-[15px] text-muted">Це займе менше хвилини.</p>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -66,7 +66,7 @@ function RouteComponent() {
               autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="h-11 rounded-[10px] border border-[#D3D7DE] bg-white px-3.5 text-[15px] text-[#16181D] outline-none focus:border-[#2F5BEA] focus:ring-[3px] focus:ring-[#2F5BEA]/20"
+              className="h-11 rounded-[10px] border border-border-input bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
             />
           </div>
 
@@ -81,7 +81,7 @@ function RouteComponent() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-11 rounded-[10px] border border-[#D3D7DE] bg-white px-3.5 text-[15px] text-[#16181D] outline-none focus:border-[#2F5BEA] focus:ring-[3px] focus:ring-[#2F5BEA]/20"
+              className="h-11 rounded-[10px] border border-border-input bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -95,12 +95,12 @@ function RouteComponent() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-11 rounded-[10px] border border-[#D3D7DE] bg-white px-3.5 text-[15px] text-[#16181D] outline-none focus:border-[#2F5BEA] focus:ring-[3px] focus:ring-[#2F5BEA]/20"
+              className="h-11 rounded-[10px] border border-border-input bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
             />
           </div>
 
           {error && (
-            <div role="alert" className="flex items-center gap-2 rounded-[10px] bg-[#FDECEC] px-3 py-2.5 text-sm text-[#9B1C1C]">
+            <div role="alert" className="flex items-center gap-2 rounded-[10px] bg-danger-bg px-3 py-2.5 text-sm text-danger-text">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 8v5M12 16.5v.01" />
@@ -111,14 +111,14 @@ function RouteComponent() {
 
           <button
             type="submit"
-            className="h-[46px] rounded-[10px] bg-[#2F5BEA] text-[15px] font-semibold text-white hover:bg-[#1E40B8]"
+            className="h-[46px] rounded-[10px] bg-primary text-[15px] font-semibold text-white hover:bg-primary-hover"
           >
             Увійти
           </button>
 
-          <p className="text-center text-sm text-[#5B6270]">
+          <p className="text-center text-sm text-muted">
             Вже є акаунт?{' '}
-            <Link to="/login" className="font-semibold text-[#2F5BEA] hover:text-[#1E40B8]">
+            <Link to="/login" className="font-semibold text-primary hover:text-primary-hover">
               Увійти
             </Link>
           </p>

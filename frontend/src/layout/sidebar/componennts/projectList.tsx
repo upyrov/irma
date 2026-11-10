@@ -8,7 +8,7 @@ export const ProjectList = () => {
                 <a
                   key={p.id}
                   href={`/projects/${p.id}/backlog`}
-                  className="flex flex-col gap-4 rounded-[14px] border border-[#E3E6EB] bg-white p-5 text-[#16181D] no-underline hover:border-[#2F5BEA] hover:shadow-[0_6px_20px_rgba(22,24,29,0.08)]"
+                  className="flex flex-col gap-4 rounded-[14px] border border-border bg-white p-5 text-ink no-underline hover:border-primary hover:shadow-[0_6px_20px_rgba(22,24,29,0.08)]"
                 >
                   <div className="flex items-center gap-3">
                     <span
@@ -19,26 +19,26 @@ export const ProjectList = () => {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-base font-bold">{p.name}</div>
-                      <div className="font-['JetBrains_Mono',monospace] text-xs text-[#5B6270]">
+                      <div className="font-['JetBrains_Mono',monospace] text-xs text-muted">
                         {p.key} · {p.team}
                       </div>
                     </div>
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                         p.template === 'Scrum'
-                          ? 'bg-[#E8EEFD] text-[#1E40B8]'
+                          ? 'bg-primary-tint text-primary-hover'
                           : p.template === 'Kanban'
-                            ? 'bg-[#E6F4EC] text-[#17603C]'
-                            : 'bg-[#FDECEC] text-[#9B1C1C]'
+                            ? 'bg-success-bg text-success-text'
+                            : 'bg-danger-bg text-danger-text'
                       }`}
                     >
                       {p.template}
                     </span>
                   </div>
         
-                  <p className="min-h-[42px] text-sm leading-normal text-[#3A404B]">{p.description}</p>
+                  <p className="min-h-[42px] text-sm leading-normal text-text-2">{p.description}</p>
         
-                  <div className="flex items-center justify-between border-t border-[#EEF0F4] pt-3.5">
+                  <div className="flex items-center justify-between border-t border-hover pt-3.5">
                     <div className="flex">
                       {p.members.map((m) => (
                         <span
@@ -50,16 +50,16 @@ export const ProjectList = () => {
                         </span>
                       ))}
                     </div>
-                    <span className="text-[13px] text-[#5B6270]">{p.stat}</span>
+                    <span className="text-[13px] text-muted">{p.stat}</span>
                   </div>
                 </a>
               ))}
         
               <button
                 type="button"
-                className="flex min-h-[196px] flex-col items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-dashed border-[#C3C8D1] text-[15px] font-semibold text-[#3A404B] hover:border-[#2F5BEA]"
+                className="flex min-h-[196px] flex-col items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-dashed border-[#C3C8D1] text-[15px] font-semibold text-text-2 hover:border-primary"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E8EEFD] text-[#2F5BEA]">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-tint text-primary">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                     <path d="M12 5v14M5 12h14" />
                   </svg>

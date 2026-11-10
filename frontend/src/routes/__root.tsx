@@ -39,10 +39,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F4F5F7] text-[#16181D]">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-page text-ink">
       <h1 className="text-4xl font-bold">404</h1>
-      <p className="text-[#5B6270]">Сторінку не знайдено</p>
-      <Link to="/" className="font-semibold text-[#2F5BEA] hover:text-[#1E40B8]">
+      <p className="text-muted">Сторінку не знайдено</p>
+      <Link to="/" className="font-semibold text-primary hover:text-primary-hover">
         На головну
       </Link>
     </div>

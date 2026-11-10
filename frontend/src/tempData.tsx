@@ -21,11 +21,11 @@ export const projects: Project[] = [
     template: 'Scrum',
     description: 'Основний вебзастосунок для керування задачами та спринтами.',
     stat: '24 задачі',
-    color: '#2F5BEA',
+    color: 'var(--color-primary)',
     members: [
-      { id: 1, initials: 'АБ', color: '#2F5BEA' },
-      { id: 2, initials: 'ОК', color: '#17603C' },
-      { id: 3, initials: 'ІМ', color: '#9B1C1C' },
+      { id: 1, initials: 'АБ', color: 'var(--color-primary)' },
+      { id: 2, initials: 'ОК', color: 'var(--color-success-text)' },
+      { id: 3, initials: 'ІМ', color: 'var(--color-danger-text)' },
     ],
   },
   {
@@ -36,7 +36,7 @@ export const projects: Project[] = [
     template: 'Kanban',
     description: 'iOS та Android застосунок із синхронізацією в реальному часі.',
     stat: '12 задач',
-    color: '#17603C',
+    color: 'var(--color-success-text)',
     members: [
       { id: 4, initials: 'ДС', color: '#7C3AED' },
       { id: 5, initials: 'НП', color: '#D97706' },
@@ -50,7 +50,7 @@ export const projects: Project[] = [
     template: 'Bug tracking',
     description: 'Облік дефектів і регресійних перевірок перед релізом.',
     stat: '8 багів',
-    color: '#9B1C1C',
+    color: 'var(--color-danger-text)',
     members: [{ id: 6, initials: 'ВР', color: '#0E7490' }],
   },
 ]
@@ -83,7 +83,7 @@ export const teams: Team[] = [
   {
     id: 2,
     name: 'Vlad',
-    color: '#1F7A4D',
+    color: 'var(--color-success)',
     members: [
       { id: 4, name: 'Саша Дорошенко', usertag: 'saddd', initials: 'СД', color: '#7C3AED' },
       { id: 5, name: 'Назар Петренко', usertag: 'nazar.p', initials: 'НП', color: '#D97706' },
@@ -93,7 +93,7 @@ export const teams: Team[] = [
   {
     id: 3,
     name: 'Kai',
-    color: '#9B1C1C',
+    color: 'var(--color-danger-text)',
     members: [
       { id: 6, name: 'Віктор Руденко', usertag: 'vrud', initials: 'ВР', color: '#0E7490' },
     ],
