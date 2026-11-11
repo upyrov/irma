@@ -1,5 +1,6 @@
 import { teams } from "#/tempData";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 type Props = {
     setIsOpenNewProject: (value: boolean) => void,
