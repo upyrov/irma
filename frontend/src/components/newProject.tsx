@@ -2,6 +2,7 @@ import { teams } from "#/tempData";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
 
 type Props = {
@@ -49,14 +50,16 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="cp-team" className="text-sm font-semibold">Команда</label>
-          <select
-            id="cp-team"
-            className="h-11 rounded-[10px] border border-border-input bg-white px-3 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
-          >
+            <Select>                       
+          <SelectTrigger>             
+            <SelectValue placeholder="Оберіть команду" /> 
+          </SelectTrigger>
+          <SelectContent>
             {teams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+                <SelectItem value={t.name}>{t.name}</SelectItem>
+            ))}           
+          </SelectContent>
+        </Select>
         </div>
       </div>
 
