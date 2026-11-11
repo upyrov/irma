@@ -1,4 +1,5 @@
 import { teams } from "#/tempData";
+import { Button } from "./ui/button";
 
 type Props = {
     setIsOpenNewProject: (value: boolean) => void,
@@ -103,19 +104,14 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
       </fieldset>
     </div>
 
+
     <div className="flex flex-wrap justify-end gap-2.5 rounded-b-[18px] border-t border-border bg-[#FAFBFC] px-7 py-4">
-      <button
-        type="button"
-        className="h-11 rounded-[10px] border border-border-input bg-white px-[18px] text-sm font-semibold text-ink hover:bg-[#F8F9FB]"
-      >
-        Скасувати
-      </button>
-      <button
-        type="submit"
-        className="h-11 rounded-[10px] bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover"
-      >
-        Створити проєкт
-      </button>
+        <Button variant={"secondary"} onClick={() => setIsOpenNewProject(false)}>
+            Скасувати
+        </Button>
+        <Button type="submit">
+            Створити проєкт
+        </Button>
     </div>
   </form>
         </div>
