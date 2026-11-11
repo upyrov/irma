@@ -1,6 +1,8 @@
 import { teams } from "#/tempData";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
 
 type Props = {
     setIsOpenNewProject: (value: boolean) => void,
@@ -37,7 +39,8 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
     <div className="flex flex-col gap-5 px-7 py-6">
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="cp-name" className="text-sm font-semibold">Назва проєкту</label>
+          {/* <label htmlFor="cp-name" className="text-sm font-semibold">Назва проєкту</label> */}
+          <Label >Назва проєкту</Label>
           <input
             id="cp-name"
             type="text"
@@ -61,12 +64,7 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
         <label htmlFor="cp-desc" className="text-sm font-semibold">
           Опис <span className="font-normal text-muted">— необов'язково</span>
         </label>
-        <textarea
-          id="cp-desc"
-          rows={3}
-          placeholder="Коротко: що робимо і для кого"
-          className="resize-y rounded-[10px] border border-border-input px-3.5 py-3 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
-        />
+        <Textarea placeholder="Коротко: що робимо і для кого" rows={3}/>
       </div>
 
       <fieldset className="m-0 flex flex-col gap-2.5 border-none p-0">
