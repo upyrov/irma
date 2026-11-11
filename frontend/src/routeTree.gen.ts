@@ -14,6 +14,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as TeamsRouteImport } from './routes/teams'
+import { Route as UiKitRouteImport } from './routes/ui-kit'
 import { Route as AppProjectsProjectIdBacklogRouteImport } from './routes/_app/projects/$projectId/backlog'
 import { Route as AppProjectsProjectIdBoardRouteImport } from './routes/_app/projects/$projectId/board'
 import { Route as AppProjectsProjectIdSettingsRouteImport } from './routes/_app/projects/$projectId/settings'
@@ -42,6 +43,11 @@ const TeamsRoute = TeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UiKitRoute = UiKitRouteImport.update({
+  id: '/ui-kit',
+  path: '/ui-kit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppProjectsProjectIdBacklogRoute =
   AppProjectsProjectIdBacklogRouteImport.update({
     id: '/projects/$projectId/backlog',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/teams': typeof TeamsRoute
+  '/ui-kit': typeof UiKitRoute
   '/projects/$projectId/backlog': typeof AppProjectsProjectIdBacklogRoute
   '/projects/$projectId/board': typeof AppProjectsProjectIdBoardRoute
   '/projects/$projectId/settings': typeof AppProjectsProjectIdSettingsRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/teams': typeof TeamsRoute
+  '/ui-kit': typeof UiKitRoute
   '/projects/$projectId/backlog': typeof AppProjectsProjectIdBacklogRoute
   '/projects/$projectId/board': typeof AppProjectsProjectIdBoardRoute
   '/projects/$projectId/settings': typeof AppProjectsProjectIdSettingsRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/teams': typeof TeamsRoute
+  '/ui-kit': typeof UiKitRoute
   '/_app/projects/$projectId/backlog': typeof AppProjectsProjectIdBacklogRoute
   '/_app/projects/$projectId/board': typeof AppProjectsProjectIdBoardRoute
   '/_app/projects/$projectId/settings': typeof AppProjectsProjectIdSettingsRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/teams'
+    | '/ui-kit'
     | '/projects/$projectId/backlog'
     | '/projects/$projectId/board'
     | '/projects/$projectId/settings'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/teams'
+    | '/ui-kit'
     | '/projects/$projectId/backlog'
     | '/projects/$projectId/board'
     | '/projects/$projectId/settings'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/teams'
+    | '/ui-kit'
     | '/_app/projects/$projectId/backlog'
     | '/_app/projects/$projectId/board'
     | '/_app/projects/$projectId/settings'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   TeamsRoute: typeof TeamsRoute
+  UiKitRoute: typeof UiKitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/teams'
       preLoaderRoute: typeof TeamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ui-kit': {
+      id: '/ui-kit'
+      path: '/ui-kit'
+      fullPath: '/ui-kit'
+      preLoaderRoute: typeof UiKitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/projects/$projectId/backlog': {
@@ -212,6 +232,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   TeamsRoute: TeamsRoute,
+  UiKitRoute: UiKitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
