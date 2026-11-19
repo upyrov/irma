@@ -9,5 +9,5 @@ public class ProjectDto
     public string? Description { get; set; }
     public ProjectTemplate Template { get; set; }
     public Guid TeamId { get; set; }
-    public List<UserDto> Members { get; set; } = new();
+    public List<ProjectMemberDto> Members { get; set; } = new();
 }
