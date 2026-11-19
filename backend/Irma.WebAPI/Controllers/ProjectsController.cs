@@ -44,6 +44,19 @@ public class ProjectsController : ControllerBase
         return Ok(projects);
     }
 
+    [HttpPost("{projectId:guid}/members")]
+    public async Task<ActionResult<ProjectMemberDto>> AddMember(Guid projectId, [FromBody] AddProjectMemberDto dto, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var member = await _projectService.AddMemberAsync(projectId, dto, currentUserId, cancellationToken);
+        return Ok(member);
+    }
+
     [HttpGet("{projectId:guid}/members")]
     public async Task<ActionResult<List<ProjectMemberDto>>> GetProjectMembers(Guid projectId, CancellationToken cancellationToken)
     {

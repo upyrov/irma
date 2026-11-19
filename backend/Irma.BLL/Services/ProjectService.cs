@@ -117,6 +117,55 @@ public class ProjectService : IProjectService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<ProjectMemberDto> AddMemberAsync(Guid projectId, AddProjectMemberDto dto, Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var canManageMembers = await _dbContext.ProjectMembers
+            .AnyAsync(pm => pm.ProjectId == projectId
+                && pm.UserId == currentUserId
+                && (pm.Role == ProjectRole.Owner || pm.Role == ProjectRole.Admin), cancellationToken);
+        if (!canManageMembers)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        if (dto.Role == ProjectRole.Owner)
+        {
+            throw new ArgumentException("Owner role cannot be assigned to a new project member.");
+        }
+
+        var targetUser = await _dbContext.Users
+            .FirstOrDefaultAsync(u => u.Id == dto.UserId, cancellationToken);
+        if (targetUser is null)
+        {
+            throw new InvalidOperationException("Target user was not found.");
+        }
+
+        var isAlreadyMember = await _dbContext.ProjectMembers
+            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == dto.UserId, cancellationToken);
+        if (isAlreadyMember)
+        {
+            throw new InvalidOperationException("User is already a member of this project.");
+        }
+
+        var projectMember = new ProjectMember
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = projectId,
+            UserId = dto.UserId,
+            Role = dto.Role
+        };
+
+        _dbContext.ProjectMembers.Add(projectMember);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new ProjectMemberDto
+        {
+            UserId = targetUser.Id,
+            Username = targetUser.Username,
+            Role = projectMember.Role
+        };
+    }
+
     public async Task<List<ProjectMemberDto>> GetProjectMembersAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
     {
         var hasAccess = await _dbContext.ProjectMembers
