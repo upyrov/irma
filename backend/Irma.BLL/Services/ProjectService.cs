@@ -52,8 +52,27 @@ public class ProjectService : IProjectService
             Role = ProjectRole.Owner
         };
 
+        var stageNames = dto.Template switch
+        {
+            ProjectTemplate.Scrum => new[] { "To Do", "In Progress", "Done" },
+            ProjectTemplate.Kanban => new[] { "Backlog", "Selected", "In Progress", "Done" },
+            ProjectTemplate.BugTracking => new[] { "New", "In Progress", "Resolved", "Closed" },
+            _ => throw new ArgumentOutOfRangeException(nameof(dto.Template), dto.Template, "Unsupported project template.")
+        };
+
+        var stages = stageNames
+            .Select((name, index) => new Stage
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                ProjectId = project.Id,
+                Order = index + 1
+            })
+            .ToList();
+
         _dbContext.Projects.Add(project);
         _dbContext.ProjectMembers.Add(projectMember);
+        _dbContext.Stages.AddRange(stages);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new ProjectDto
