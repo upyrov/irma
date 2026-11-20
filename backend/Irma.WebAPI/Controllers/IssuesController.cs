@@ -30,4 +30,30 @@ public class IssuesController : ControllerBase
         var issue = await _issueService.CreateAsync(dto, currentUserId, cancellationToken);
         return Ok(issue);
     }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<IssueDto>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var issue = await _issueService.GetByIdAsync(id, currentUserId, cancellationToken);
+        return Ok(issue);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<IssueDto>> Update(Guid id, [FromBody] IssueUpdateDto dto, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var issue = await _issueService.UpdateAsync(id, dto, currentUserId, cancellationToken);
+        return Ok(issue);
+    }
 }

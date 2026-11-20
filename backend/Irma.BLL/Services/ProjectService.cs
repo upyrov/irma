@@ -207,4 +207,34 @@ public class ProjectService : IProjectService
             })
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<List<BoardIssueDto>> GetBoardIssuesAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var hasAccess = await _dbContext.ProjectMembers
+            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == currentUserId, cancellationToken);
+        if (!hasAccess)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        return await _dbContext.Issues
+            .Where(i => i.ProjectId == projectId)
+            .Select(i => new BoardIssueDto
+            {
+                Id = i.Id,
+                IssueKey = i.IssueKey,
+                Title = i.Title,
+                Priority = i.Priority,
+                StoryPoints = i.StoryPoints,
+                StageId = i.StageId,
+                Assignee = i.Assignee == null
+                    ? null
+                    : new UserDto
+                    {
+                        Id = i.Assignee.Id,
+                        Username = i.Assignee.Username
+                    }
+            })
+            .ToListAsync(cancellationToken);
+    }
 }

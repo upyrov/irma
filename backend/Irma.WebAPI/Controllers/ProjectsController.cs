@@ -82,4 +82,17 @@ public class ProjectsController : ControllerBase
         var stages = await _projectService.GetStagesAsync(id, currentUserId, cancellationToken);
         return Ok(stages);
     }
+
+    [HttpGet("{id:guid}/board")]
+    public async Task<ActionResult<List<BoardIssueDto>>> GetBoard(Guid id, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var issues = await _projectService.GetBoardIssuesAsync(id, currentUserId, cancellationToken);
+        return Ok(issues);
+    }
 }
