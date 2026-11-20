@@ -185,4 +185,26 @@ public class ProjectService : IProjectService
             })
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<List<StageDto>> GetStagesAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var hasAccess = await _dbContext.ProjectMembers
+            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == currentUserId, cancellationToken);
+        if (!hasAccess)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        return await _dbContext.Stages
+            .Where(s => s.ProjectId == projectId)
+            .OrderBy(s => s.Order)
+            .Select(s => new StageDto
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Order = s.Order,
+                ProjectId = s.ProjectId
+            })
+            .ToListAsync(cancellationToken);
+    }
 }
