@@ -95,4 +95,17 @@ public class ProjectsController : ControllerBase
         var issues = await _projectService.GetBoardIssuesAsync(id, currentUserId, cancellationToken);
         return Ok(issues);
     }
+
+    [HttpGet("{id:guid}/epics")]
+    public async Task<ActionResult<List<BoardIssueDto>>> GetEpics(Guid id, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var epics = await _projectService.GetEpicsAsync(id, currentUserId, cancellationToken);
+        return Ok(epics);
+    }
 }
