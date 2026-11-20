@@ -7,4 +7,6 @@ public interface IIssueService
     Task<IssueDto> CreateAsync(IssueCreateDto dto, Guid currentUserId, CancellationToken cancellationToken);
     Task<IssueDto> GetByIdAsync(Guid issueId, Guid currentUserId, CancellationToken cancellationToken);
     Task<IssueDto> UpdateAsync(Guid issueId, IssueUpdateDto dto, Guid currentUserId, CancellationToken cancellationToken);
+    Task<List<CommentDto>> GetCommentsAsync(Guid issueId, Guid currentUserId, CancellationToken cancellationToken);
+    Task<CommentDto> CreateCommentAsync(Guid issueId, CommentCreateDto dto, Guid currentUserId, CancellationToken cancellationToken);
 }

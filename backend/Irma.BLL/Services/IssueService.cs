@@ -312,6 +312,95 @@ public class IssueService : IIssueService
         };
     }
 
+    public async Task<List<CommentDto>> GetCommentsAsync(Guid issueId, Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var issueProjectId = await _dbContext.Issues
+            .Where(i => i.Id == issueId)
+            .Select(i => (Guid?)i.ProjectId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (!issueProjectId.HasValue)
+        {
+            throw new ArgumentException("Issue was not found.");
+        }
+
+        var hasAccess = await _dbContext.ProjectMembers
+            .AnyAsync(pm => pm.ProjectId == issueProjectId.Value && pm.UserId == currentUserId, cancellationToken);
+        if (!hasAccess)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        return await _dbContext.Comments
+            .Where(c => c.IssueId == issueId)
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => new CommentDto
+            {
+                Id = c.Id,
+                Text = c.Text,
+                CreatedAt = c.CreatedAt,
+                IssueId = c.IssueId,
+                Author = new UserDto
+                {
+                    Id = c.Author.Id,
+                    Username = c.Author.Username
+                }
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<CommentDto> CreateCommentAsync(Guid issueId, CommentCreateDto dto, Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var issueProjectId = await _dbContext.Issues
+            .Where(i => i.Id == issueId)
+            .Select(i => (Guid?)i.ProjectId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (!issueProjectId.HasValue)
+        {
+            throw new ArgumentException("Issue was not found.");
+        }
+
+        var hasAccess = await _dbContext.ProjectMembers
+            .AnyAsync(pm => pm.ProjectId == issueProjectId.Value && pm.UserId == currentUserId, cancellationToken);
+        if (!hasAccess)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        var author = await _dbContext.Users
+            .Where(u => u.Id == currentUserId)
+            .Select(u => new { u.Id, u.Username })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (author is null)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        var comment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            Text = dto.Text.Trim(),
+            CreatedAt = DateTime.UtcNow,
+            AuthorId = currentUserId,
+            IssueId = issueId
+        };
+
+        _dbContext.Comments.Add(comment);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new CommentDto
+        {
+            Id = comment.Id,
+            Text = comment.Text,
+            CreatedAt = comment.CreatedAt,
+            IssueId = comment.IssueId,
+            Author = new UserDto
+            {
+                Id = author.Id,
+                Username = author.Username
+            }
+        };
+    }
+
     private static string GetProjectPrefix(string projectName)
     {
         var lettersOnly = new string(projectName

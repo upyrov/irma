@@ -56,4 +56,30 @@ public class IssuesController : ControllerBase
         var issue = await _issueService.UpdateAsync(id, dto, currentUserId, cancellationToken);
         return Ok(issue);
     }
+
+    [HttpGet("{id:guid}/comments")]
+    public async Task<ActionResult<List<CommentDto>>> GetComments(Guid id, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var comments = await _issueService.GetCommentsAsync(id, currentUserId, cancellationToken);
+        return Ok(comments);
+    }
+
+    [HttpPost("{id:guid}/comments")]
+    public async Task<ActionResult<CommentDto>> CreateComment(Guid id, [FromBody] CommentCreateDto dto, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var comment = await _issueService.CreateCommentAsync(id, dto, currentUserId, cancellationToken);
+        return Ok(comment);
+    }
 }
