@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Irma.BLL.DTOs;
 using Irma.BLL.Services;
+using Irma.DAL.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -107,5 +108,18 @@ public class ProjectsController : ControllerBase
 
         var epics = await _projectService.GetEpicsAsync(id, currentUserId, cancellationToken);
         return Ok(epics);
+    }
+
+    [HttpGet("{id:guid}/my-role")]
+    public async Task<ActionResult<MyRoleDto>> GetMyRole(Guid id, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var roleDto = await _projectService.GetMyRoleAsync(id, currentUserId, cancellationToken);
+        return Ok(roleDto);
     }
 }

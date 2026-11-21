@@ -11,4 +11,5 @@ public interface IProjectService
     Task<List<BoardIssueDto>> GetEpicsAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken);
     Task<List<ProjectMemberDto>> GetProjectMembersAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken);
     Task<ProjectMemberDto> AddMemberAsync(Guid projectId, AddProjectMemberDto dto, Guid currentUserId, CancellationToken cancellationToken);
+    Task<MyRoleDto> GetMyRoleAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken);
 }

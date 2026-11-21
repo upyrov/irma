@@ -281,4 +281,15 @@ public class ProjectService : IProjectService
             })
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<MyRoleDto> GetMyRoleAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var projectMember = await _dbContext.ProjectMembers
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == currentUserId, cancellationToken);
+
+        return new MyRoleDto
+        {
+            Role = projectMember?.Role
+        };
+    }
 }
