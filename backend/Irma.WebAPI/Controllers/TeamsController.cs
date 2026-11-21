@@ -50,4 +50,11 @@ public class TeamsController : ControllerBase
         var users = await _teamService.SearchUsersToAddAsync(teamId, query ?? string.Empty, cancellationToken);
         return Ok(users);
     }
+
+    [HttpPost("{teamId:guid}/members/{userId:guid}")]
+    public async Task<ActionResult> AddUserToTeam(Guid teamId, Guid userId, CancellationToken cancellationToken)
+    {
+        await _teamService.AddUserToTeamAsync(teamId, userId, cancellationToken);
+        return NoContent();
+    }
 }

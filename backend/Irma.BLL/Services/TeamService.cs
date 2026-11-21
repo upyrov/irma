@@ -96,4 +96,30 @@ public class TeamService : ITeamService
             .Take(50)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task AddUserToTeamAsync(Guid teamId, Guid userId, CancellationToken cancellationToken)
+    {
+        var team = await _dbContext.Teams
+            .Include(t => t.Members)
+            .FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken);
+
+        if (team is null)
+        {
+            throw new ArgumentException("Team not found.");
+        }
+
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user is null)
+        {
+            throw new ArgumentException("User not found.");
+        }
+
+        if (team.Members.Any(m => m.Id == userId))
+        {
+            throw new InvalidOperationException("User is already a member of this team.");
+        }
+
+        team.Members.Add(user);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
