@@ -133,6 +133,20 @@ public class ProjectService : IProjectService
             throw new ArgumentException("Owner role cannot be assigned to a new project member.");
         }
 
+        var project = await _dbContext.Projects
+            .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
+        if (project is null)
+        {
+            throw new InvalidOperationException("Project not found.");
+        }
+
+        var isUserInTeam = await _dbContext.Teams
+            .AnyAsync(t => t.Id == project.TeamId && t.Members.Any(m => m.Id == dto.UserId), cancellationToken);
+        if (!isUserInTeam)
+        {
+            throw new InvalidOperationException("User is not a member of the project's team.");
+        }
+
         var targetUser = await _dbContext.Users
             .FirstOrDefaultAsync(u => u.Id == dto.UserId, cancellationToken);
         if (targetUser is null)
