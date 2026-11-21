@@ -71,4 +71,29 @@ public class TeamService : ITeamService
             })
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<List<UserDto>> SearchUsersToAddAsync(Guid teamId, string searchTerm, CancellationToken cancellationToken)
+    {
+        var teamMemberIds = await _dbContext.Teams
+            .Where(t => t.Id == teamId)
+            .SelectMany(t => t.Members.Select(m => m.Id))
+            .ToListAsync(cancellationToken);
+
+        var query = _dbContext.Users
+            .Where(u => !teamMemberIds.Contains(u.Id));
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(u => u.Username.Contains(searchTerm));
+        }
+
+        return await query
+            .Select(u => new UserDto
+            {
+                Id = u.Id,
+                Username = u.Username
+            })
+            .Take(50)
+            .ToListAsync(cancellationToken);
+    }
 }

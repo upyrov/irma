@@ -43,4 +43,11 @@ public class TeamsController : ControllerBase
         var teams = await _teamService.GetMyTeamsAsync(currentUserId, cancellationToken);
         return Ok(teams);
     }
+
+    [HttpGet("{teamId:guid}/search-users")]
+    public async Task<ActionResult<List<UserDto>>> SearchUsersToAdd(Guid teamId, [FromQuery] string? query, CancellationToken cancellationToken)
+    {
+        var users = await _teamService.SearchUsersToAddAsync(teamId, query ?? string.Empty, cancellationToken);
+        return Ok(users);
+    }
 }
