@@ -5,9 +5,11 @@ import { AddMemberForm } from "#/components/ProjectTemplate/Scrum/settings/addMe
 import { MembersTable } from "#/components/ProjectTemplate/Scrum/settings/membersTable"
 import { PermissionsTable } from "#/components/ProjectTemplate/Scrum/settings/permissionsTable"
 import type { ProjectMember, ProjectRole } from "#/components/ProjectTemplate/Scrum/settings/types"
-import { backlogIssues, projects, settingsMembers } from "#/tempData"
+import { findProject, guardSection } from "#/lib/projectTemplates"
+import { backlogIssues, settingsMembers } from "#/tempData"
 
 export const Route = createFileRoute("/_app/projects/$projectId/settings")({
+  beforeLoad: guardSection("settings"),
   component: RouteComponent,
 })
 
@@ -15,7 +17,7 @@ const avatarColors = ["#0E7490", "#A8326B", "#D97706", "#7C3AED", "#17603C"]
 
 function RouteComponent() {
   const { projectId } = Route.useParams()
-  const project = projects.find((p) => String(p.id) === projectId)
+  const project = findProject(projectId)
 
   const [members, setMembers] = useState<ProjectMember[]>(settingsMembers)
 

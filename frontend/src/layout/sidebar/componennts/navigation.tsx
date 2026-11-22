@@ -1,5 +1,11 @@
 import { Link, useParams } from "@tanstack/react-router"
 import type { ReactNode } from "react"
+import {
+  findProject,
+  hasSection,
+  type ProjectSection,
+  sectionPath,
+} from "#/lib/projectTemplates"
 import { projects } from "#/tempData"
 
 export const navItemClass =
@@ -10,10 +16,7 @@ export const navItemInactive = {
 }
 
 type Section = {
-  to:
-    | "/projects/$projectId/backlog"
-    | "/projects/$projectId/board"
-    | "/projects/$projectId/settings"
+  id: ProjectSection
   label: string
   icon: ReactNode
 }
@@ -26,21 +29,17 @@ const icon = (children: ReactNode) => (
 
 export const Navigation = () => {
   const { projectId = String(projects[0].id) } = useParams({ strict: false })
-  const project = projects.find((p) => String(p.id) === projectId)
+  const project = findProject(projectId)
   const isKanban = project?.template === "Kanban"
 
-  const sections: Section[] = [
-    ...(isKanban
-      ? []
-      : [
-          {
-            to: "/projects/$projectId/backlog" as const,
-            label: "Беклог",
-            icon: icon(<path d="M4 6h16M4 12h16M4 18h10" />),
-          },
-        ]),
+  const allSections: Section[] = [
     {
-      to: "/projects/$projectId/board",
+      id: "backlog",
+      label: "Беклог",
+      icon: icon(<path d="M4 6h16M4 12h16M4 18h10" />),
+    },
+    {
+      id: "board",
       label: isKanban ? "Дошка" : "Активна дошка",
       icon: icon(
         <>
@@ -50,7 +49,7 @@ export const Navigation = () => {
       ),
     },
     {
-      to: "/projects/$projectId/settings",
+      id: "settings",
       label: "Налаштування",
       icon: icon(
         <>
@@ -62,15 +61,25 @@ export const Navigation = () => {
     },
   ]
 
+  // Лише розділи, які є в шаблоні проєкту
+  const sections = project
+    ? allSections.filter((s) => hasSection(project.template, s.id))
+    : []
+
   return (
     <nav className="flex flex-col gap-0.5">
       <span className="px-2.5 pb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-muted">
         Планування
       </span>
+      {sections.length === 0 && (
+        <p className="m-0 px-2.5 text-[13px] leading-normal text-muted">
+          Для цього шаблону розділи ще в розробці.
+        </p>
+      )}
       {sections.map((s) => (
         <Link
-          key={s.to}
-          to={s.to}
+          key={s.id}
+          to={sectionPath[s.id]}
           params={{ projectId }}
           className={navItemClass}
           activeProps={navItemActive}

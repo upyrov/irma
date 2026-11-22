@@ -1,30 +1,38 @@
 import { Link, useParams, useRouterState } from "@tanstack/react-router"
 import { Check, ChevronDown } from "lucide-react"
 import { DropdownMenu } from "radix-ui"
-import { projects } from "#/tempData"
-
-type SectionPath =
-  | "/projects/$projectId/backlog"
-  | "/projects/$projectId/board"
-  | "/projects/$projectId/settings"
+import { Badge } from "#/components/ui/badge"
+import {
+  findProject,
+  firstSection,
+  hasSection,
+  type ProjectSection,
+  sectionPath,
+} from "#/lib/projectTemplates"
+import { type Project, projects } from "#/tempData"
 
 /** Розділ, у якому зараз користувач, — щоб після перемикання проєкту лишитися в ньому */
-const useCurrentSection = (): "backlog" | "board" | "settings" => {
+const useCurrentSection = (): ProjectSection => {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const section = pathname.split("/")[3]
   return section === "board" || section === "settings" ? section : "backlog"
 }
 
+const itemClass =
+  "flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-2.5 py-2 text-ink no-underline outline-none data-[highlighted]:bg-hover data-[disabled]:cursor-not-allowed data-[disabled]:opacity-60"
+
 export function ProjectSwitcher() {
   const { projectId } = useParams({ strict: false })
   const section = useCurrentSection()
-  const current = projects.find((p) => String(p.id) === projectId) ?? projects[0]
+  const current = findProject(projectId) ?? projects[0]
 
-  const targetFor = (template: string): SectionPath =>
-    // У Kanban немає беклогу — ведемо на дошку
-    section === "backlog" && template === "Kanban"
-      ? "/projects/$projectId/board"
-      : `/projects/$projectId/${section}`
+  /** Той самий розділ, якщо він є в шаблоні, інакше перший доступний; null — проєкт закритий */
+  const targetFor = (template: Project["template"]): ProjectSection | null => {
+    if (template === "Scrum") return "backlog" 
+
+    return hasSection(template, section) ? section : firstSection(template)
+  }
+    
 
   return (
     <DropdownMenu.Root>
@@ -55,13 +63,10 @@ export function ProjectSwitcher() {
           sideOffset={6}
           className="z-50 w-[var(--radix-dropdown-menu-trigger-width)] rounded-xl border border-border bg-white p-1 shadow-[0_12px_32px_rgba(22,24,29,0.12)]"
         >
-          {projects.map((p) => (
-            <DropdownMenu.Item key={p.id} asChild>
-              <Link
-                to={targetFor(p.template)}
-                params={{ projectId: String(p.id) }}
-                className="flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-2.5 py-2 text-ink no-underline outline-none data-[highlighted]:bg-hover"
-              >
+          {projects.map((p) => {
+            const target = targetFor(p.template)
+            const content = (
+              <>
                 <span
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] text-xs font-extrabold text-white"
                   style={{ background: p.color }}
@@ -75,9 +80,35 @@ export function ProjectSwitcher() {
                   </div>
                 </div>
                 {p.id === current.id && <Check size={16} className="shrink-0 text-primary" />}
-              </Link>
-            </DropdownMenu.Item>
-          ))}
+                {!target && (
+                  <Badge variant="yellow" size="chip" className="font-bold">
+                    НЕЗАБАРОМ
+                  </Badge>
+                )}
+              </>
+            )
+
+            // Проєкт без жодного доступного розділу не відкривається
+            if (!target) {
+              return (
+                <DropdownMenu.Item key={p.id} disabled className={itemClass}>
+                  {content}
+                </DropdownMenu.Item>
+              )
+            }
+
+            return (
+              <DropdownMenu.Item key={p.id} asChild>
+                <Link
+                  to={sectionPath[target]}
+                  params={{ projectId: String(p.id) }}
+                  className={itemClass}
+                >
+                  {content}
+                </Link>
+              </DropdownMenu.Item>
+            )
+          })}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

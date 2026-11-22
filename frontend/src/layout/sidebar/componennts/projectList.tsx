@@ -1,15 +1,39 @@
+import { Link } from "@tanstack/react-router"
+import type { ReactNode } from "react"
+import { Badge } from "#/components/ui/badge"
+import { firstSection, sectionPath } from "#/lib/projectTemplates"
 import { projects } from "#/tempData"
+
+const cardClass =
+  "flex flex-col gap-4 rounded-[14px] border border-border bg-white p-5 text-ink no-underline"
+
+/** Картка відкриває перший доступний розділ; якщо таких немає — картка неактивна */
+const ProjectCard = ({ project, children }: { project: (typeof projects)[number]; children: ReactNode }) => {
+  const section = firstSection(project.template)
+  if (!section) {
+    return (
+      <div aria-disabled="true" title="Шаблон ще в розробці" className={`${cardClass} cursor-not-allowed opacity-60`}>
+        {children}
+      </div>
+    )
+  }
+  return (
+    <Link
+      to={sectionPath[section]}
+      params={{ projectId: String(project.id) }}
+      className={`${cardClass} hover:border-primary hover:shadow-[0_6px_20px_rgba(22,24,29,0.08)]`}
+    >
+      {children}
+    </Link>
+  )
+}
 
 
 export const ProjectList = () => {
     return (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
               {projects.map((p) => (
-                <a
-                  key={p.id}
-                  href={`/projects/${p.id}/backlog`}
-                  className="flex flex-col gap-4 rounded-[14px] border border-border bg-white p-5 text-ink no-underline hover:border-primary hover:shadow-[0_6px_20px_rgba(22,24,29,0.08)]"
-                >
+                <ProjectCard key={p.id} project={p}>
                   <div className="flex items-center gap-3">
                     <span
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] font-['Manrope',sans-serif] text-[15px] font-extrabold text-white"
@@ -50,9 +74,15 @@ export const ProjectList = () => {
                         </span>
                       ))}
                     </div>
-                    <span className="text-[13px] text-muted">{p.stat}</span>
+                    {firstSection(p.template) ? (
+                      <span className="text-[13px] text-muted">{p.stat}</span>
+                    ) : (
+                      <Badge variant="yellow" size="chip" className="font-bold">
+                        НЕЗАБАРОМ
+                      </Badge>
+                    )}
                   </div>
-                </a>
+                </ProjectCard>
               ))}
         
               <button

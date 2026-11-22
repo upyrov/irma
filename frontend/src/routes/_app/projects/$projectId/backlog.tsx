@@ -2,12 +2,12 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 
 import { ProjectHeader } from "#/components/projectHeader"
+import { findProject, guardSection } from "#/lib/projectTemplates"
 import type { TaskType } from "#/components/ui/task-type"
 import {
   backlogEpics,
   backlogIssues,
   backlogSprints,
-  projects,
 } from "#/tempData"
 import type { Epic, Issue } from "#/components/ProjectTemplate/Scrum/backlog/types"
 import { EpicsPanel, type EpicProgress } from "#/components/ProjectTemplate/Scrum/backlog/epicsPanel"
@@ -16,12 +16,14 @@ import { SprintSection } from "#/components/ProjectTemplate/Scrum/backlog/sprint
 import { BacklogSection } from "#/components/ProjectTemplate/Scrum/backlog/backlogSection"
 
 export const Route = createFileRoute("/_app/projects/$projectId/backlog")({
+  // Беклог є лише в Scrum: для інших шаблонів ведемо деінде ще до рендеру
+  beforeLoad: guardSection("backlog"),
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const { projectId } = Route.useParams()
-  const project = projects.find((p) => String(p.id) === projectId)
+  const project = findProject(projectId)
   const projectKey = project?.key ?? "KAI"
 
   const [issues, setIssues] = useState<Issue[]>(backlogIssues)

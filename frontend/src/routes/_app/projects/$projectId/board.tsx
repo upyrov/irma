@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { KanbanBoard } from "#/components/ProjectTemplate/Kanban/KanbanBoard"
 import { ScrumBoard } from "#/components/ProjectTemplate/Scrum/ScrumBoard"
-import { projects } from "#/tempData"
+import { findProject, guardSection } from "#/lib/projectTemplates"
 
 export const Route = createFileRoute("/_app/projects/$projectId/board")({
+  beforeLoad: guardSection("board"),
   component: BoardPage,
 })
 
 function BoardPage() {
   const { projectId } = Route.useParams()
-  // id у моках — число, а параметр маршруту — рядок
-  const project = projects.find((p) => String(p.id) === projectId)
+  const project = findProject(projectId)
 
   if (!project) return <div className="p-8">Проєкт не знайдено</div>
 
