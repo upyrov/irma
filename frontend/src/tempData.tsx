@@ -1,9 +1,9 @@
-import type { Assignee, Epic, Issue, Sprint, Stage } from '#/components/backlog/types'
-import type { ProjectMember } from '#/components/settings/types'
+import type { Assignee, Epic, Issue, Sprint, Stage } from '#/components/ProjectTemplate/Scrum/backlog/types'
+import type { ProjectMember } from '#/components/ProjectTemplate/Scrum/settings/types'
 
 type Member = { id: number; initials: string; color: string }
 
-type Project = {
+export type Project = {
   id: number
   key: string
   name: string

@@ -1,5 +1,5 @@
-import { daysLeft, formatRange, plural } from "#/components/backlog/format"
-import type { Sprint } from "#/components/backlog/types"
+import { daysLeft, formatRange, plural } from "#/components/ProjectTemplate/Scrum/backlog/format"
+import type { Sprint } from "#/components/ProjectTemplate/Scrum/backlog/types"
 import { SprintStatusBadge } from "#/components/ui/badge"
 import { Button } from "#/components/ui/button"
 

@@ -1,5 +1,5 @@
 import { cn } from "cn"
-import type { Assignee } from "#/components/backlog/types"
+import type { Assignee } from "#/components/ProjectTemplate/Scrum/backlog/types"
 import { Avatar } from "#/components/ui/avatar"
 
 type Props = {

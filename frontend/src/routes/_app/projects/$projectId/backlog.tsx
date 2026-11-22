@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
-import { ActiveSprintBanner } from "#/components/backlog/activeSprintBanner"
-import { BacklogSection } from "#/components/backlog/backlogSection"
-import { type EpicProgress, EpicsPanel } from "#/components/backlog/epicsPanel"
-import { SprintSection } from "#/components/backlog/sprintSection"
-import type { Epic, Issue } from "#/components/backlog/types"
+
 import { ProjectHeader } from "#/components/projectHeader"
 import type { TaskType } from "#/components/ui/task-type"
 import {
@@ -13,6 +9,11 @@ import {
   backlogSprints,
   projects,
 } from "#/tempData"
+import type { Epic, Issue } from "#/components/ProjectTemplate/Scrum/backlog/types"
+import { EpicsPanel, type EpicProgress } from "#/components/ProjectTemplate/Scrum/backlog/epicsPanel"
+import { ActiveSprintBanner } from "#/components/ProjectTemplate/Scrum/backlog/activeSprintBanner"
+import { SprintSection } from "#/components/ProjectTemplate/Scrum/backlog/sprintSection"
+import { BacklogSection } from "#/components/ProjectTemplate/Scrum/backlog/backlogSection"
 
 export const Route = createFileRoute("/_app/projects/$projectId/backlog")({
   component: RouteComponent,

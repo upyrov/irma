@@ -1,5 +1,5 @@
 import { cn } from "cn"
-import type { Assignee, Epic } from "#/components/backlog/types"
+import type { Assignee, Epic } from "#/components/ProjectTemplate/Scrum/backlog/types"
 import { Button } from "#/components/ui/button"
 import { Label } from "#/components/ui/label"
 import {

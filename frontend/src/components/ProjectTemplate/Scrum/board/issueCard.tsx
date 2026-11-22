@@ -3,8 +3,8 @@ import { Avatar, AvatarEmpty } from "#/components/ui/avatar"
 import { Badge, IssueKey } from "#/components/ui/badge"
 import { PriorityIcon, priorities } from "#/components/ui/priority"
 import { TaskTypeIcon, taskTypes } from "#/components/ui/task-type"
-import type { Epic, Issue } from "#/components/backlog/types"
-import { ISSUE_MIME } from "#/components/backlog/useDropTarget"
+import type { Epic, Issue } from "#/components/ProjectTemplate/Scrum/backlog/types"
+import { ISSUE_MIME } from "#/components/ProjectTemplate/Scrum/backlog/useDropTarget"
 
 type Props = {
   issue: Issue

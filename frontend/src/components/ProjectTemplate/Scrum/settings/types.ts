@@ -1,4 +1,4 @@
-import type { Assignee } from "#/components/backlog/types"
+import type { Assignee } from "#/components/ProjectTemplate/Scrum/backlog/types"
 
 export type ProjectRole = "owner" | "admin" | "member" | "viewer"
 

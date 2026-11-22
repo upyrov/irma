@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 import { ProjectHeader } from "#/components/projectHeader"
-import { AddMemberForm } from "#/components/settings/addMemberForm"
-import { MembersTable } from "#/components/settings/membersTable"
-import { PermissionsTable } from "#/components/settings/permissionsTable"
-import type { ProjectMember, ProjectRole } from "#/components/settings/types"
+import { AddMemberForm } from "#/components/ProjectTemplate/Scrum/settings/addMemberForm"
+import { MembersTable } from "#/components/ProjectTemplate/Scrum/settings/membersTable"
+import { PermissionsTable } from "#/components/ProjectTemplate/Scrum/settings/permissionsTable"
+import type { ProjectMember, ProjectRole } from "#/components/ProjectTemplate/Scrum/settings/types"
 import { backlogIssues, projects, settingsMembers } from "#/tempData"
 
 export const Route = createFileRoute("/_app/projects/$projectId/settings")({
