@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 import { ActiveSprintBanner } from "#/components/backlog/activeSprintBanner"
-import { BacklogHeader } from "#/components/backlog/backlogHeader"
 import { BacklogSection } from "#/components/backlog/backlogSection"
 import { type EpicProgress, EpicsPanel } from "#/components/backlog/epicsPanel"
 import { SprintSection } from "#/components/backlog/sprintSection"
 import type { Epic, Issue } from "#/components/backlog/types"
+import { ProjectHeader } from "#/components/projectHeader"
 import type { TaskType } from "#/components/ui/task-type"
 import {
   backlogEpics,
@@ -78,6 +78,7 @@ function RouteComponent() {
           storyPoints: null,
           assignee: null,
           epicId: selectedEpicId,
+          stageId: "todo",
           sprintId: null,
           done: false,
         },
@@ -93,8 +94,10 @@ function RouteComponent() {
 
   return (
     <div className="flex min-w-0 flex-col">
-      <BacklogHeader
+      <ProjectHeader
         projectName={project?.name ?? "Проєкт"}
+        pageLabel="Беклог"
+        searchPlaceholder="Пошук задач"
         search={search}
         onSearchChange={setSearch}
       />

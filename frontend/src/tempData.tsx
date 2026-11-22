@@ -1,4 +1,5 @@
-import type { Epic, Issue, Sprint } from '#/components/backlog/types'
+import type { Assignee, Epic, Issue, Sprint, Stage } from '#/components/backlog/types'
+import type { ProjectMember } from '#/components/settings/types'
 
 type Member = { id: number; initials: string; color: string }
 
@@ -104,9 +105,28 @@ export const teams: Team[] = [
 
 // ---- Беклог ----
 
-const ab = { initials: 'АБ', color: 'var(--color-primary)' }
-const ok = { initials: 'ОК', color: 'var(--color-success-text)' }
-const im = { initials: 'ІМ', color: 'var(--color-danger-text)' }
+const ab: Assignee = { id: 'u1', name: 'Артем Б.', initials: 'АБ', color: 'var(--color-primary)' }
+const ok: Assignee = { id: 'u2', name: 'Олена К.', initials: 'ОК', color: '#B4441C' }
+const mt: Assignee = { id: 'u3', name: 'Максим Т.', initials: 'МТ', color: 'var(--color-success)' }
+const im: Assignee = { id: 'u4', name: 'Ірина М.', initials: 'ІМ', color: 'var(--color-epic)' }
+
+/** Поточний користувач — для фільтра «Тільки мої» */
+export const currentUserId = ab.id
+
+export const projectMembers: Assignee[] = [ab, ok, mt, im]
+
+export const scrumStages: Stage[] = [
+  { id: 'todo', name: 'To Do', isDone: false },
+  { id: 'progress', name: 'In Progress', isDone: false },
+  { id: 'done', name: 'Done', isDone: true },
+]
+
+export const kanbanStages: Stage[] = [
+  { id: 'backlog', name: 'Backlog', isDone: false },
+  { id: 'selected', name: 'Selected', isDone: false },
+  { id: 'progress', name: 'In Progress', isDone: false },
+  { id: 'done', name: 'Done', isDone: true },
+]
 
 export const backlogEpics: Epic[] = [
   { id: 'e1', key: 'KAI-1', name: 'Автентифікація', color: 'purple' },
@@ -118,7 +138,7 @@ export const backlogSprints: Sprint[] = [
   {
     id: 's2',
     name: 'Спринт 2',
-    goal: null,
+    goal: 'авторизація через HttpOnly cookie та дашборд проєктів',
     startDate: '2026-11-10',
     endDate: '2026-11-24',
     status: 'active',
@@ -135,22 +155,35 @@ export const backlogSprints: Sprint[] = [
 
 export const backlogIssues: Issue[] = [
   // Спринт 2 (активний)
-  { id: 'i4', key: 'KAI-4', title: 'Форма входу та реєстрації', type: 'story', priority: 'high', storyPoints: 5, assignee: ab, epicId: 'e1', sprintId: 's2', done: true },
-  { id: 'i5', key: 'KAI-5', title: 'JWT refresh-токени', type: 'task', priority: 'highest', storyPoints: 3, assignee: ok, epicId: 'e1', sprintId: 's2', done: true },
-  { id: 'i6', key: 'KAI-6', title: 'Колонки дошки за шаблоном', type: 'story', priority: 'medium', storyPoints: 5, assignee: im, epicId: 'e3', sprintId: 's2', done: false },
-  { id: 'i7', key: 'KAI-7', title: 'Не зберігається порядок колонок', type: 'bug', priority: 'high', storyPoints: 2, assignee: ab, epicId: 'e3', sprintId: 's2', done: false },
+  { id: 'i4', key: 'KAI-4', title: 'Форма входу та реєстрації', type: 'story', priority: 'high', storyPoints: 5, assignee: ab, epicId: 'e1', stageId: 'done', sprintId: 's2', done: true },
+  { id: 'i5', key: 'KAI-5', title: 'JWT refresh-токени', type: 'task', priority: 'highest', storyPoints: 3, assignee: ok, epicId: 'e1', stageId: 'done', sprintId: 's2', done: true },
+  { id: 'i6', key: 'KAI-6', title: 'Колонки дошки за шаблоном', type: 'story', priority: 'medium', storyPoints: 5, assignee: im, epicId: 'e3', stageId: 'progress', sprintId: 's2', done: false },
+  { id: 'i8', key: 'KAI-8', title: 'Дашборд проєктів', type: 'story', priority: 'medium', storyPoints: 3, assignee: mt, epicId: 'e2', stageId: 'progress', sprintId: 's2', done: false },
+  { id: 'i9', key: 'KAI-9', title: 'Logout очищає HttpOnly cookie', type: 'task', priority: 'high', storyPoints: 1, assignee: ok, epicId: 'e1', stageId: 'todo', sprintId: 's2', done: false },
+  { id: 'i10', key: 'KAI-10', title: 'Порожній стан дошки', type: 'task', priority: 'low', storyPoints: 2, assignee: mt, epicId: 'e3', stageId: 'todo', sprintId: 's2', done: false },
+  { id: 'i7', key: 'KAI-7', title: 'Не зберігається порядок колонок', type: 'bug', priority: 'high', storyPoints: 2, assignee: ab, epicId: 'e3', stageId: 'todo', sprintId: 's2', done: false },
 
   // Спринт 3 (запланований)
-  { id: 'i12', key: 'KAI-12', title: 'Створення та редагування спринту', type: 'story', priority: 'high', storyPoints: 5, assignee: ab, epicId: 'e2', sprintId: 's3', done: false },
-  { id: 'i13', key: 'KAI-13', title: 'Drag & drop задач між беклогом і спринтом', type: 'story', priority: 'highest', storyPoints: 8, assignee: ok, epicId: 'e2', sprintId: 's3', done: false },
-  { id: 'i14', key: 'KAI-14', title: 'Підрахунок story points спринту', type: 'task', priority: 'medium', storyPoints: 2, assignee: im, epicId: 'e2', sprintId: 's3', done: false },
-  { id: 'i15', key: 'KAI-15', title: 'Скидання пароля поштою', type: 'task', priority: 'low', storyPoints: 1, assignee: null, epicId: 'e1', sprintId: 's3', done: false },
+  { id: 'i12', key: 'KAI-12', title: 'Створення та редагування спринту', type: 'story', priority: 'high', storyPoints: 5, assignee: ab, epicId: 'e2', stageId: 'todo', sprintId: 's3', done: false },
+  { id: 'i13', key: 'KAI-13', title: 'Drag & drop задач між беклогом і спринтом', type: 'story', priority: 'highest', storyPoints: 8, assignee: ok, epicId: 'e2', stageId: 'todo', sprintId: 's3', done: false },
+  { id: 'i14', key: 'KAI-14', title: 'Підрахунок story points спринту', type: 'task', priority: 'medium', storyPoints: 2, assignee: im, epicId: 'e2', stageId: 'todo', sprintId: 's3', done: false },
+  { id: 'i15', key: 'KAI-15', title: 'Скидання пароля поштою', type: 'task', priority: 'low', storyPoints: 1, assignee: null, epicId: 'e1', stageId: 'todo', sprintId: 's3', done: false },
 
   // Беклог
-  { id: 'i21', key: 'KAI-21', title: 'Фільтр задач за виконавцем на дошці', type: 'story', priority: 'medium', storyPoints: 3, assignee: ok, epicId: 'e3', sprintId: null, done: false },
-  { id: 'i22', key: 'KAI-22', title: 'WIP-ліміти для колонок', type: 'story', priority: 'low', storyPoints: 5, assignee: null, epicId: 'e3', sprintId: null, done: false },
-  { id: 'i23', key: 'KAI-23', title: 'Помилка при порожній цілі спринту', type: 'bug', priority: 'high', storyPoints: 1, assignee: im, epicId: 'e2', sprintId: null, done: false },
-  { id: 'i24', key: 'KAI-24', title: 'Вхід через Google', type: 'task', priority: 'lowest', storyPoints: 3, assignee: null, epicId: 'e1', sprintId: null, done: false },
-  { id: 'i25', key: 'KAI-25', title: 'Burndown-графік спринту', type: 'story', priority: 'medium', storyPoints: 8, assignee: ab, epicId: 'e2', sprintId: null, done: false },
-  { id: 'i26', key: 'KAI-26', title: 'Оновити залежності фронтенду', type: 'task', priority: 'lowest', storyPoints: null, assignee: null, epicId: null, sprintId: null, done: false },
+  { id: 'i21', key: 'KAI-21', title: 'Фільтр задач за виконавцем на дошці', type: 'story', priority: 'medium', storyPoints: 3, assignee: ok, epicId: 'e3', stageId: 'todo', sprintId: null, done: false },
+  { id: 'i22', key: 'KAI-22', title: 'WIP-ліміти для колонок', type: 'story', priority: 'low', storyPoints: 5, assignee: null, epicId: 'e3', stageId: 'todo', sprintId: null, done: false },
+  { id: 'i23', key: 'KAI-23', title: 'Помилка при порожній цілі спринту', type: 'bug', priority: 'high', storyPoints: 1, assignee: im, epicId: 'e2', stageId: 'todo', sprintId: null, done: false },
+  { id: 'i24', key: 'KAI-24', title: 'Вхід через Google', type: 'task', priority: 'lowest', storyPoints: 3, assignee: null, epicId: 'e1', stageId: 'todo', sprintId: null, done: false },
+  { id: 'i25', key: 'KAI-25', title: 'Burndown-графік спринту', type: 'story', priority: 'medium', storyPoints: 8, assignee: ab, epicId: 'e2', stageId: 'todo', sprintId: null, done: false },
+  { id: 'i26', key: 'KAI-26', title: 'Оновити залежності фронтенду', type: 'task', priority: 'lowest', storyPoints: null, assignee: null, epicId: null, stageId: 'todo', sprintId: null, done: false },
+]
+
+// ---- Налаштування: учасники проєкту ----
+
+export const settingsMembers: ProjectMember[] = [
+  { ...ab, username: 'artem.b', role: 'owner' },
+  { ...ok, username: 'olena.k', role: 'admin' },
+  { ...mt, username: 'maksym.t', role: 'member' },
+  { ...im, username: 'iryna.m', role: 'member' },
+  { id: 'u5', name: 'Дмитро С.', initials: 'ДС', color: '#0E7490', username: 'dmytro.s', role: 'viewer' },
 ]

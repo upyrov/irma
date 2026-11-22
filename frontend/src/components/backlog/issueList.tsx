@@ -49,9 +49,14 @@ export const IssueList = ({
   )
 }
 
-type DropZoneProps = { visible: boolean; active: boolean; label: string }
+type DropZoneProps = {
+  visible: boolean
+  active: boolean
+  label: string
+  className?: string
+}
 
-export const DropZone = ({ visible, active, label }: DropZoneProps) => {
+export const DropZone = ({ visible, active, label, className }: DropZoneProps) => {
   if (!visible) return null
   return (
     <div
@@ -59,7 +64,8 @@ export const DropZone = ({ visible, active, label }: DropZoneProps) => {
         "mx-[18px] my-2 flex h-11 items-center justify-center rounded-[10px] border-2 border-dashed text-[13px] font-semibold",
         active
           ? "border-primary bg-primary-soft text-primary-hover"
-          : "border-border-input text-muted"
+          : "border-border-input text-muted",
+        className
       )}
     >
       {label}

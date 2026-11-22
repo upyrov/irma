@@ -1,3 +1,4 @@
+import { SidebarShell } from '#/layout/sidebar/sidebar'
 import { HomeProjectsNav } from '#/layout/sidebar/componennts/homeProjetcsNav';
 import { Logo } from '#/layout/sidebar/componennts/logo';
 import { TeamList } from '#/layout/sidebar/componennts/teamList';
@@ -12,11 +13,11 @@ export const Route = createFileRoute('/teams')({
 function RouteComponent() {
  return (
    <div className='flex min-h-screen bg-white'>
-       <aside className="box-border flex w-60 max-w-70 h-screen flex-col gap-5 border-r border-border bg-white px-3.5 pt-5 pb-1">
+       <SidebarShell>
          <Logo/>
          <HomeProjectsNav />
          <UserMenu />
-       </aside>
+       </SidebarShell>
      
    <div className="box-border flex min-w-0 flex-1 flex-col gap-7 px-10 py-8">
  

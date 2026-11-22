@@ -4,7 +4,9 @@ import type { TaskType } from "#/components/ui/task-type"
 
 export type EpicColor = "purple" | "blue" | "orange" | "green"
 
-export type Assignee = { initials: string; color: string }
+export type Assignee = { id: string; name: string; initials: string; color: string }
+
+export type Stage = { id: string; name: string; isDone: boolean }
 
 export type Epic = {
   id: string
@@ -31,6 +33,7 @@ export type Issue = {
   storyPoints: number | null
   assignee: Assignee | null
   epicId: string | null
+  stageId: string
   sprintId: string | null
   done: boolean
 }
