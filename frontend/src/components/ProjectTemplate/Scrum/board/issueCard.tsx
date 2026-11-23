@@ -10,6 +10,8 @@ type Props = {
   issue: Issue
   epic?: Epic
   isDragging?: boolean
+  canDrag?: boolean
+  showLock?: boolean
   onDragStart?: (id: string) => void
   onDragEnd?: () => void
   onOpen?: (id: string) => void
@@ -19,6 +21,8 @@ export const IssueCard = ({
   issue,
   epic,
   isDragging,
+  canDrag = true,
+  showLock = !canDrag,
   onDragStart,
   onDragEnd,
   onOpen,
@@ -28,8 +32,11 @@ export const IssueCard = ({
     <div
       role="button"
       tabIndex={0}
-      draggable
+      draggable={canDrag}
+      aria-roledescription={canDrag ? "картка, яку можна перетягнути" : undefined}
+      title={showLock ? "Статус може змінити лише виконавець або адміністратор" : undefined}
       onDragStart={(e) => {
+        if (!canDrag) return e.preventDefault()
         e.dataTransfer.setData(ISSUE_MIME, issue.id)
         e.dataTransfer.effectAllowed = "move"
         onDragStart?.(issue.id)
@@ -38,7 +45,8 @@ export const IssueCard = ({
       onClick={() => onOpen?.(issue.id)}
       onKeyDown={(e) => e.key === "Enter" && onOpen?.(issue.id)}
       className={cn(
-        "flex cursor-grab flex-col gap-2.5 rounded-[10px] border border-border bg-white px-3.5 py-3 text-ink outline-none hover:border-border-input hover:shadow-[0_4px_12px_rgba(22,24,29,0.08)] focus-visible:border-primary active:cursor-grabbing",
+        "flex flex-col gap-2.5 rounded-[10px] border border-border bg-white px-3.5 py-3 text-ink outline-none hover:border-border-input hover:shadow-[0_4px_12px_rgba(22,24,29,0.08)] focus-visible:border-primary",
+        canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         isDragging && "rotate-[-1.5deg] border-primary opacity-50"
       )}
     >
@@ -72,6 +80,20 @@ export const IssueCard = ({
         <Badge size="count" className="h-5 min-w-6 text-[11px]">
           {issue.storyPoints ?? "–"}
         </Badge>
+        {showLock && (
+          <svg
+            className="size-3.5 shrink-0 text-muted"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            role="img"
+            aria-label="Статус змінює лише виконавець"
+          >
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+        )}
         {issue.assignee ? (
           <Avatar
             initials={issue.assignee.initials}

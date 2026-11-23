@@ -1,4 +1,5 @@
 import { Link, useParams, useRouterState } from "@tanstack/react-router"
+import { Spinner } from "#/components/ui/spinner"
 import { Check, ChevronDown } from "lucide-react"
 import { DropdownMenu } from "radix-ui"
 import { Badge } from "#/components/ui/badge"
@@ -11,7 +12,6 @@ import {
   sectionPath,
 } from "#/lib/projectTemplates"
 
-/** Розділ, у якому зараз користувач, — щоб після перемикання проєкту лишитися в ньому */
 const useCurrentSection = (): ProjectSection => {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const section = pathname.split("/")[3]
@@ -27,7 +27,6 @@ export function ProjectSwitcher() {
   const { data: projects = [] } = useUiProjects()
   const current = projects.find((p) => p.id === projectId) ?? projects[0]
 
-  /** Той самий розділ, якщо він є в шаблоні, інакше перший доступний; null — проєкт закритий */
   const targetFor = (template: Project["template"]): ProjectSection | null => {
     if (template === "Scrum") return "backlog" 
 
@@ -37,8 +36,8 @@ export function ProjectSwitcher() {
 
   if (!current) {
     return (
-      <div className="flex h-[56px] items-center rounded-xl border border-border px-3 text-sm text-muted">
-        Завантаження…
+      <div className="flex h-[56px] items-center justify-center rounded-xl border border-border px-3">
+        <Spinner label="Завантаження проєкту" className="size-5" />
       </div>
     )
   }
@@ -97,7 +96,6 @@ export function ProjectSwitcher() {
               </>
             )
 
-            // Проєкт без жодного доступного розділу не відкривається
             if (!target) {
               return (
                 <DropdownMenu.Item key={p.id} disabled className={itemClass}>

@@ -4,6 +4,7 @@ import type { ProjectView } from "#/api/hooks/useProjectView"
 import { nextIssueKey } from "#/components/createIssue/buildIssue"
 import { CreateIssueModal } from "#/components/createIssue/createIssueModal"
 import type { NewIssueDefaults } from "#/components/createIssue/types"
+import type { Issue } from "#/components/ProjectTemplate/Scrum/backlog/types"
 import { IssueDetailModal } from "#/components/issueDetail/issueDetailModal"
 import { ErrorBanner } from "#/components/ProjectTemplate/pageState"
 import { ProjectHeader } from "#/components/projectHeader"
@@ -22,10 +23,8 @@ const BugIcon = () => (
 
 type Props = { view: ProjectView; project: Project }
 
-/** Дошка багів: тріаж New → Triage → In Progress → Fixed → Verified, сортування за пріоритетом */
 export const BugBoard = ({ view, project }: Props) => {
   const { issues, stages: bugStages, members, currentUserId } = view
-  /** Нові баги створюються лише в першій колонці (New) */
   const intakeStageId = bugStages[0]?.id
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState(initialFilters)
@@ -53,12 +52,14 @@ export const BugBoard = ({ view, project }: Props) => {
 
   const draggingIssue = issues.find((i) => i.id === draggingId)
 
+  const canDrag = (issue: Issue) => view.canChangeStatus(issue.assignee?.id)
+
   const moveIssue = (issueId: string, stageId: string) => {
-    view.moveToStage(issueId, stageId)
+    const issue = issues.find((i) => i.id === issueId)
+    if (issue && canDrag(issue)) view.moveToStage(issueId, stageId)
     setDraggingId(null)
   }
 
-  // Новий баг — завжди тип Bug і колонка New
   const openCreate = () => setCreateDefaults({ type: "bug", stageId: intakeStageId })
 
   return (
@@ -71,6 +72,7 @@ export const BugBoard = ({ view, project }: Props) => {
         search={search}
         onSearchChange={setSearch}
         onCreate={openCreate}
+        showCreate={view.canEdit}
         createLabel="Повідомити про баг"
         createIcon={<BugIcon />}
         createVariant="danger"
@@ -120,9 +122,13 @@ export const BugBoard = ({ view, project }: Props) => {
                 key={stage.id}
                 stage={stage}
                 issues={visibleIssues.filter((i) => i.stageId === stage.id)}
-                canDrop={!!draggingIssue && draggingIssue.stageId !== stage.id}
+                canDrop={
+                  !!draggingIssue && canDrag(draggingIssue) && draggingIssue.stageId !== stage.id
+                }
+                canDrag={canDrag}
+                showLocks={view.canEdit}
                 onDropIssue={(id) => moveIssue(id, stage.id)}
-                onCreate={stage.id === intakeStageId ? openCreate : undefined}
+                onCreate={view.canEdit && stage.id === intakeStageId ? openCreate : undefined}
                 draggingId={draggingId}
                 onDragStart={setDraggingId}
                 onDragEnd={() => setDraggingId(null)}

@@ -14,6 +14,8 @@ type Props = IssueDragProps & {
   canDrop: boolean
   onDropIssue: (issueId: string) => void
   onCreate?: () => void
+  canDrag: (issue: Issue) => boolean
+  showLocks?: boolean
 }
 
 export const BoardColumn = ({
@@ -23,6 +25,8 @@ export const BoardColumn = ({
   canDrop,
   onDropIssue,
   onCreate,
+  canDrag,
+  showLocks = true,
   draggingId,
   onDragStart,
   onDragEnd,
@@ -51,6 +55,8 @@ export const BoardColumn = ({
           issue={issue}
           epic={issue.epicId ? epicsById[issue.epicId] : undefined}
           isDragging={draggingId === issue.id}
+          canDrag={canDrag(issue)}
+          showLock={showLocks && !canDrag(issue)}
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
           onOpen={onOpen}
@@ -64,6 +70,7 @@ export const BoardColumn = ({
         className="m-0 h-16"
       />
 
+      {onCreate && (
       <Button
         variant="ghost"
         size="xs"
@@ -73,6 +80,7 @@ export const BoardColumn = ({
         <Plus className="size-3.5" strokeWidth={2.2} />
         Створити задачу
       </Button>
+      )}
     </section>
   )
 }

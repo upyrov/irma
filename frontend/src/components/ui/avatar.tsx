@@ -23,7 +23,6 @@ function Avatar({
   )
 }
 
-/** Порожній аватар для непризначених задач */
 function AvatarEmpty({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span

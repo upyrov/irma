@@ -1,4 +1,5 @@
 using Irma.BLL.DTOs;
+using Irma.BLL.Exceptions;
 using Irma.DAL;
 using Irma.DAL.Entities;
 using Irma.DAL.Enums;
@@ -32,7 +33,7 @@ public class ProjectService : IProjectService
             .AnyAsync(t => t.Id == dto.TeamId && t.Members.Any(m => m.Id == currentUserId), cancellationToken);
         if (!hasTeamAccess)
         {
-            throw new UnauthorizedAccessException();
+            throw new ForbiddenException("You are not a member of this team.");
         }
 
         var project = new Project
@@ -119,14 +120,8 @@ public class ProjectService : IProjectService
 
     public async Task<ProjectMemberDto> AddMemberAsync(Guid projectId, AddProjectMemberDto dto, Guid currentUserId, CancellationToken cancellationToken)
     {
-        var canManageMembers = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == projectId
-                && pm.UserId == currentUserId
-                && (pm.Role == ProjectRole.Owner || pm.Role == ProjectRole.Admin), cancellationToken);
-        if (!canManageMembers)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        var currentRole = await _dbContext.RequireRoleAsync(projectId, currentUserId, cancellationToken);
+        ProjectAccess.EnsureCanManage(currentRole);
 
         if (dto.Role == ProjectRole.Owner)
         {
@@ -137,21 +132,21 @@ public class ProjectService : IProjectService
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
         if (project is null)
         {
-            throw new InvalidOperationException("Project not found.");
+            throw new NotFoundException("Project not found.");
         }
 
         var isUserInTeam = await _dbContext.Teams
             .AnyAsync(t => t.Id == project.TeamId && t.Members.Any(m => m.Id == dto.UserId), cancellationToken);
         if (!isUserInTeam)
         {
-            throw new InvalidOperationException("User is not a member of the project's team.");
+            throw new ArgumentException("User is not a member of the project's team.");
         }
 
         var targetUser = await _dbContext.Users
             .FirstOrDefaultAsync(u => u.Id == dto.UserId, cancellationToken);
         if (targetUser is null)
         {
-            throw new InvalidOperationException("Target user was not found.");
+            throw new NotFoundException("Target user was not found.");
         }
 
         // Той самий ендпоінт змінює роль наявного учасника (RBAC зі сторінки налаштувань)
@@ -196,12 +191,7 @@ public class ProjectService : IProjectService
 
     public async Task<List<ProjectMemberDto>> GetProjectMembersAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
     {
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        await _dbContext.RequireRoleAsync(projectId, currentUserId, cancellationToken);
 
         return await _dbContext.ProjectMembers
             .Where(pm => pm.ProjectId == projectId)
@@ -216,12 +206,7 @@ public class ProjectService : IProjectService
 
     public async Task<List<StageDto>> GetStagesAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
     {
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        await _dbContext.RequireRoleAsync(projectId, currentUserId, cancellationToken);
 
         return await _dbContext.Stages
             .Where(s => s.ProjectId == projectId)
@@ -238,12 +223,7 @@ public class ProjectService : IProjectService
 
     public async Task<List<BoardIssueDto>> GetBoardIssuesAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
     {
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        await _dbContext.RequireRoleAsync(projectId, currentUserId, cancellationToken);
 
         return await _dbContext.Issues
             .Where(i => i.ProjectId == projectId)
@@ -272,12 +252,7 @@ public class ProjectService : IProjectService
 
     public async Task<List<BoardIssueDto>> GetEpicsAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
     {
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        await _dbContext.RequireRoleAsync(projectId, currentUserId, cancellationToken);
 
         return await _dbContext.Issues
             .Where(i => i.ProjectId == projectId && i.IssueType == IssueType.Epic)

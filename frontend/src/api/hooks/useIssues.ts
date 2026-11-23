@@ -9,13 +9,10 @@ import type {
 import { issuesApi } from "../issues"
 import { queryKeys } from "../queryKeys"
 
-// ── Запити ──
-
 export const stagesQueryOptions = (projectId: Guid) =>
   queryOptions({
     queryKey: queryKeys.projects.stages(projectId),
     queryFn: () => issuesApi.stages(projectId),
-    // Колонки генеруються з шаблону і майже не змінюються
     staleTime: 10 * 60_000,
   })
 
@@ -37,23 +34,16 @@ export const commentsQueryOptions = (issueId: Guid) =>
     queryFn: () => issuesApi.comments(issueId),
   })
 
-/** GET /api/projects/{id}/stages — колонки дошки */
 export const useStages = (projectId: Guid) => useQuery(stagesQueryOptions(projectId))
 
-/** GET /api/projects/{id}/board — картки дошки */
 export const useBoard = (projectId: Guid) => useQuery(boardQueryOptions(projectId))
 
-/** GET /api/issues/{id} — деталі задачі; `issueId` undefined — модалка закрита, запиту немає */
 export const useIssue = (issueId: Guid | undefined) =>
   useQuery({ ...issueQueryOptions(issueId ?? ""), enabled: !!issueId })
 
-/** GET /api/issues/{id}/comments */
 export const useComments = (issueId: Guid | undefined) =>
   useQuery({ ...commentsQueryOptions(issueId ?? ""), enabled: !!issueId })
 
-// ── Зміни ──
-
-/** POST /api/issues. projectId потрібен лише щоб оновити беклог / дошку цього проєкту */
 export const useCreateIssue = (projectId: Guid) => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -65,10 +55,6 @@ export const useCreateIssue = (projectId: Guid) => {
   })
 }
 
-/**
- * PUT /api/issues/{id}. Для drag'n'drop на дошці картка переїжджає одразу
- * (оптимістично), а якщо сервер відмовив — повертається назад.
- */
 export const useUpdateIssue = (projectId: Guid) => {
   const queryClient = useQueryClient()
   const boardKey = queryKeys.projects.board(projectId)
@@ -79,7 +65,6 @@ export const useUpdateIssue = (projectId: Guid) => {
       issuesApi.update(issueId, dto),
 
     onMutate: async ({ issueId, dto }) => {
-      // Дошка і беклог показують ту саму задачу — оновлюємо обидва
       const keys = [boardKey, backlogKey]
       await Promise.all(keys.map((queryKey) => queryClient.cancelQueries({ queryKey })))
       const previous = keys.map((key) => [key, queryClient.getQueryData<BoardIssueDto[]>(key)] as const)
@@ -109,13 +94,11 @@ export const useUpdateIssue = (projectId: Guid) => {
 
     onSuccess: (issue: IssueDto) => queryClient.setQueryData(queryKeys.issues.detail(issue.id), issue),
 
-    // Синхронізуємося з сервером: дошка, беклог, епіки
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.scope(projectId) }),
   })
 }
 
-/** POST /api/issues/{id}/comments */
 export const useAddComment = (issueId: Guid) => {
   const queryClient = useQueryClient()
   return useMutation({

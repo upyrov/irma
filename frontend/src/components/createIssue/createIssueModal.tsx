@@ -18,13 +18,13 @@ import {
 import type { TaskType } from "#/components/ui/task-type"
 import { Textarea } from "#/components/ui/textarea"
 import type { Project } from "#/api/adapters"
+import { createIssueErrorMessage } from "#/api/hooks/useProjectView"
 import { issueFormConfig } from "./formConfig"
 import { PriorityPicker } from "./priorityPicker"
 import { StoryPointsPicker } from "./storyPointsPicker"
 import { TypePicker } from "./typePicker"
 import type { NewIssueDefaults, NewIssueValues } from "./types"
 
-// Radix Select не приймає порожнє значення — позначаємо «нічого» окремим рядком
 const NONE = "__none__"
 const fromSelect = (v: string) => (v === NONE ? null : v)
 
@@ -32,16 +32,14 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   project: Pick<Project, "name" | "key" | "color" | "template">
-  /** Ключ, який отримає задача, напр. KAI-27 */
   nextKey: string
   stages: Stage[]
   members: Assignee[]
   currentUserId?: string
   epics?: Epic[]
-  /** Спринти, у які можна додати задачу (лише Scrum) */
   sprints?: Sprint[]
   defaults?: NewIssueDefaults
-  onCreate: (values: NewIssueValues) => void
+  onCreate: (values: NewIssueValues) => Promise<unknown>
 }
 
 const Field = ({ id, label, children }: { id: string; label: ReactNode; children: ReactNode }) => (
@@ -65,7 +63,6 @@ export const CreateIssueModal = ({
   onCreate,
 }: Props) => {
   const config = issueFormConfig[project.template]
-  // Поле показуємо, лише якщо шаблон його підтримує і є з чого вибирати
   const showEpic = config.fields.epic && epics.length > 0
   const showSprint = config.fields.sprint && sprints.length > 0
 
@@ -86,14 +83,16 @@ export const CreateIssueModal = ({
   const [form, setForm] = useState(initial)
   const [createAnother, setCreateAnother] = useState(false)
   const [titleError, setTitleError] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
 
-  // Щоразу при відкритті — чиста форма з потрібними значеннями за замовчуванням
   // biome-ignore lint/correctness/useExhaustiveDependencies: скидаємо лише при відкритті
   useEffect(() => {
     if (open) {
       setForm(initial())
       setTitleError(false)
+      setSubmitError(null)
     }
   }, [open])
 
@@ -102,8 +101,13 @@ export const CreateIssueModal = ({
 
   const isEpic = form.type === "epic"
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (submitting) return
+    if (!form.stageId) {
+      setSubmitError("Колонки дошки ще не завантажились — спробуйте за мить")
+      return
+    }
     const title = form.title.trim()
     if (!title) {
       setTitleError(true)
@@ -111,21 +115,28 @@ export const CreateIssueModal = ({
       return
     }
 
-    onCreate({
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      await onCreate({
       type: form.type,
       title,
       description: form.description.trim() || null,
       stageId: form.stageId,
       priority: form.priority,
       assigneeId: fromSelect(form.assigneeId),
-      // Приховані поля не передаємо; у епіка не може бути батьківського епіка
       epicId: showEpic && !isEpic ? fromSelect(form.epicId) : null,
       sprintId: showSprint ? fromSelect(form.sprintId) : null,
       storyPoints: config.fields.storyPoints ? form.storyPoints : null,
-    })
+      })
+    } catch (err) {
+      setSubmitError(createIssueErrorMessage(err))
+      return
+    } finally {
+      setSubmitting(false)
+    }
 
     if (createAnother) {
-      // Лишаємо тип, статус, спринт тощо — очищаємо лише текст
       setForm((f) => ({ ...f, title: "", description: "" }))
       titleRef.current?.focus()
     } else {
@@ -146,7 +157,6 @@ export const CreateIssueModal = ({
           className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[680px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-[18px] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.3)] outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
           <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-            {/* Шапка */}
             <div className="flex items-start justify-between gap-4 border-b border-border px-7 pt-6 pb-5">
               <div className="min-w-0">
                 <Dialog.Title className="m-0 mb-2 font-display text-2xl font-extrabold tracking-[-0.02em]">
@@ -176,7 +186,6 @@ export const CreateIssueModal = ({
               </Dialog.Close>
             </div>
 
-            {/* Поля — прокручуються, шапка й кнопки лишаються на місці */}
             <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-7 py-6">
               {config.types.length > 1 && (
                 <TypePicker types={config.types} value={form.type} onChange={(t) => set("type", t)} />
@@ -232,7 +241,6 @@ export const CreateIssueModal = ({
 
               <PriorityPicker value={form.priority} onChange={(p) => set("priority", p)} />
 
-              {/* Дві колонки; якщо полів непарна кількість — останнє на всю ширину */}
               <div className="grid gap-4 sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-2">
                 <Field id="ci-stage" label="Статус">
                   <Select value={form.stageId} onValueChange={(v) => set("stageId", v)}>
@@ -314,7 +322,12 @@ export const CreateIssueModal = ({
               )}
             </div>
 
-            {/* Дії */}
+            {submitError && (
+              <p role="alert" className="m-0 border-t border-border bg-danger-bg px-7 py-3 text-sm text-danger-text">
+                {submitError}
+              </p>
+            )}
+
             <div className="flex flex-wrap items-center gap-2.5 rounded-b-[18px] border-t border-border bg-[#FAFBFC] px-7 py-4">
               <label className="mr-auto flex cursor-pointer items-center gap-2 text-sm text-text-2">
                 <input
@@ -332,9 +345,10 @@ export const CreateIssueModal = ({
               </Dialog.Close>
               <Button
                 type="submit"
+                disabled={submitting}
                 variant={project.template === "Bug tracking" ? "danger" : "default"}
               >
-                {config.submitLabel}
+                {submitting ? "Створення…" : config.submitLabel}
               </Button>
             </div>
           </form>

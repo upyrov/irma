@@ -1,7 +1,9 @@
 using System.Text;
 using Irma.BLL.DTOs;
+using Irma.BLL.Exceptions;
 using Irma.DAL;
 using Irma.DAL.Entities;
+using Irma.DAL.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Irma.BLL.Services;
@@ -23,15 +25,11 @@ public class IssueService : IIssueService
             .FirstOrDefaultAsync(cancellationToken);
         if (!projectId.HasValue)
         {
-            throw new ArgumentException("Stage was not found.");
+            throw new NotFoundException("Stage was not found.");
         }
 
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == projectId.Value && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        var role = await _dbContext.RequireRoleAsync(projectId.Value, currentUserId, cancellationToken);
+        ProjectAccess.EnsureCanEdit(role);
 
         if (dto.AssigneeId.HasValue)
         {
@@ -45,32 +43,32 @@ public class IssueService : IIssueService
 
         if (dto.SprintId.HasValue)
         {
-            var sprintBelongsToProject = await _dbContext.Sprints
-                .AnyAsync(s => s.Id == dto.SprintId.Value && s.ProjectId == projectId.Value, cancellationToken);
-            if (!sprintBelongsToProject)
-            {
-                throw new ArgumentException("Sprint does not belong to this project.");
-            }
+            await EnsureSprintAcceptsIssuesAsync(dto.SprintId.Value, projectId.Value, cancellationToken);
         }
 
         if (dto.EpicId.HasValue)
         {
-            var epicBelongsToProject = await _dbContext.Issues
-                .AnyAsync(i => i.Id == dto.EpicId.Value && i.ProjectId == projectId.Value, cancellationToken);
-            if (!epicBelongsToProject)
+            if (dto.IssueType == IssueType.Epic)
             {
-                throw new ArgumentException("Epic does not belong to this project.");
+                throw new ArgumentException("An epic cannot belong to another epic.");
             }
+
+            await EnsureEpicAsync(dto.EpicId.Value, projectId.Value, cancellationToken);
         }
 
         var projectName = await _dbContext.Projects
             .Where(p => p.Id == projectId.Value)
             .Select(p => p.Name)
             .FirstAsync(cancellationToken);
+        var prefix = GetProjectPrefix(projectName);
 
-        var issueCount = await _dbContext.Issues
-            .CountAsync(i => i.ProjectId == projectId.Value, cancellationToken);
-        var issueKey = $"{GetProjectPrefix(projectName)}-{issueCount + 1}";
+        // Номер = кількість задач + 1. Щоб одночасні запити не отримали однаковий ключ,
+        // блокуємо рядок проєкту до кінця транзакції: номери в межах проєкту видаються по черзі.
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"""SELECT 1 FROM "Projects" WHERE "Id" = {projectId.Value} FOR UPDATE""",
+            cancellationToken);
+        var issueKey = $"{prefix}-{await NextIssueNumberAsync(projectId.Value, cancellationToken)}";
 
         var issue = new Issue
         {
@@ -91,6 +89,7 @@ public class IssueService : IIssueService
 
         _dbContext.Issues.Add(issue);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         UserDto? assignee = null;
         if (issue.AssigneeId.HasValue)
@@ -152,15 +151,10 @@ public class IssueService : IIssueService
 
         if (issue is null)
         {
-            throw new ArgumentException("Issue was not found.");
+            throw new NotFoundException("Issue was not found.");
         }
 
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == issue.ProjectId && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        await _dbContext.RequireRoleAsync(issue.ProjectId, currentUserId, cancellationToken);
 
         return new IssueDto
         {
@@ -185,14 +179,25 @@ public class IssueService : IIssueService
             .FirstOrDefaultAsync(i => i.Id == issueId, cancellationToken);
         if (issue is null)
         {
-            throw new ArgumentException("Issue was not found.");
+            throw new NotFoundException("Issue was not found.");
         }
 
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == issue.ProjectId && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
+        var role = await _dbContext.RequireRoleAsync(issue.ProjectId, currentUserId, cancellationToken);
+        ProjectAccess.EnsureCanEdit(role);
+
+        // Member керує статусом і виконавцем лише своїх (або ще нічиїх) задач
+        var isSomeoneElses = issue.AssigneeId.HasValue && issue.AssigneeId.Value != currentUserId;
+        if (!ProjectAccess.IsManager(role) && isSomeoneElses)
         {
-            throw new UnauthorizedAccessException();
+            if (dto.StageId.HasValue && dto.StageId.Value != issue.StageId)
+            {
+                throw new ForbiddenException("Members can only change the status of issues assigned to them.");
+            }
+
+            if (dto.ClearAssignee || (dto.AssigneeId.HasValue && dto.AssigneeId.Value != issue.AssigneeId))
+            {
+                throw new ForbiddenException("Members cannot reassign issues assigned to other users.");
+            }
         }
 
         if (dto.StageId.HasValue && dto.StageId.Value != issue.StageId)
@@ -215,29 +220,24 @@ public class IssueService : IIssueService
             }
         }
 
-        if (dto.SprintId.HasValue)
+        if (dto.SprintId.HasValue && dto.SprintId.Value != issue.SprintId)
         {
-            var sprintBelongsToProject = await _dbContext.Sprints
-                .AnyAsync(s => s.Id == dto.SprintId.Value && s.ProjectId == issue.ProjectId, cancellationToken);
-            if (!sprintBelongsToProject)
-            {
-                throw new ArgumentException("Sprint does not belong to this project.");
-            }
+            await EnsureSprintAcceptsIssuesAsync(dto.SprintId.Value, issue.ProjectId, cancellationToken);
         }
 
-        if (dto.EpicId.HasValue)
+        if (dto.EpicId.HasValue && dto.EpicId.Value != issue.EpicId)
         {
             if (dto.EpicId.Value == issue.Id)
             {
                 throw new ArgumentException("Issue cannot be its own epic.");
             }
 
-            var epicBelongsToProject = await _dbContext.Issues
-                .AnyAsync(i => i.Id == dto.EpicId.Value && i.ProjectId == issue.ProjectId, cancellationToken);
-            if (!epicBelongsToProject)
+            if (issue.IssueType == IssueType.Epic)
             {
-                throw new ArgumentException("Epic does not belong to this project.");
+                throw new ArgumentException("An epic cannot belong to another epic.");
             }
+
+            await EnsureEpicAsync(dto.EpicId.Value, issue.ProjectId, cancellationToken);
         }
 
         if (dto.Title is not null)
@@ -335,15 +335,10 @@ public class IssueService : IIssueService
             .FirstOrDefaultAsync(cancellationToken);
         if (!issueProjectId.HasValue)
         {
-            throw new ArgumentException("Issue was not found.");
+            throw new NotFoundException("Issue was not found.");
         }
 
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == issueProjectId.Value && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        await _dbContext.RequireRoleAsync(issueProjectId.Value, currentUserId, cancellationToken);
 
         return await _dbContext.Comments
             .Where(c => c.IssueId == issueId)
@@ -371,15 +366,11 @@ public class IssueService : IIssueService
             .FirstOrDefaultAsync(cancellationToken);
         if (!issueProjectId.HasValue)
         {
-            throw new ArgumentException("Issue was not found.");
+            throw new NotFoundException("Issue was not found.");
         }
 
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == issueProjectId.Value && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        var role = await _dbContext.RequireRoleAsync(issueProjectId.Value, currentUserId, cancellationToken);
+        ProjectAccess.EnsureCanEdit(role);
 
         var author = await _dbContext.Users
             .Where(u => u.Id == currentUserId)
@@ -414,6 +405,34 @@ public class IssueService : IIssueService
                 Username = author.Username
             }
         };
+    }
+
+    /// <summary>Задачі не видаляються, тож наступний номер = кількість задач проєкту + 1</summary>
+    private async Task<int> NextIssueNumberAsync(Guid projectId, CancellationToken cancellationToken) =>
+        await _dbContext.Issues.CountAsync(i => i.ProjectId == projectId, cancellationToken) + 1;
+
+    private async Task EnsureSprintAcceptsIssuesAsync(Guid sprintId, Guid projectId, CancellationToken cancellationToken)
+    {
+        var status = await _dbContext.Sprints
+            .Where(s => s.Id == sprintId && s.ProjectId == projectId)
+            .Select(s => (SprintStatus?)s.Status)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new ArgumentException("Sprint does not belong to this project.");
+
+        if (status == SprintStatus.Closed)
+        {
+            throw new ArgumentException("Cannot add an issue to a closed sprint.");
+        }
+    }
+
+    private async Task EnsureEpicAsync(Guid epicId, Guid projectId, CancellationToken cancellationToken)
+    {
+        var isEpic = await _dbContext.Issues
+            .AnyAsync(i => i.Id == epicId && i.ProjectId == projectId && i.IssueType == IssueType.Epic, cancellationToken);
+        if (!isEpic)
+        {
+            throw new ArgumentException("Epic does not belong to this project.");
+        }
     }
 
     private static string GetProjectPrefix(string projectName)

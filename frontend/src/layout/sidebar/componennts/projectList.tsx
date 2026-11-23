@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { PageSpinner } from "#/components/ui/spinner"
 import type { ReactNode } from "react"
 import { Badge } from "#/components/ui/badge"
 import type { Project } from "#/api/adapters"
@@ -9,7 +10,6 @@ import { firstSection, sectionPath } from "#/lib/projectTemplates"
 const cardClass =
   "flex flex-col gap-4 rounded-[14px] border border-border bg-white p-5 text-ink no-underline"
 
-/** Картка відкриває перший доступний розділ; якщо таких немає — картка неактивна */
 const ProjectCard = ({ project, children }: { project: Project; children: ReactNode }) => {
   const section = firstSection(project.template)
   if (!section) {
@@ -30,13 +30,12 @@ const ProjectCard = ({ project, children }: { project: Project; children: ReactN
   )
 }
 
-
 type Props = { onCreate?: () => void }
 
 export const ProjectList = ({ onCreate }: Props) => {
     const { data: projects, isPending, error } = useUiProjects()
 
-    if (isPending) return <p className="text-sm text-muted">Завантаження проєктів…</p>
+    if (isPending) return <PageSpinner label="Завантаження проєктів" />
     if (error) return <p className="text-sm text-danger-text">{errorMessage(error)}</p>
 
     return (

@@ -72,15 +72,17 @@ export const EpicsPanel = ({
     >
       <div className="flex items-center justify-between">
         <h2 className="m-0 text-[15px] font-bold">Епіки</h2>
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          aria-label="Створити епік"
-          onClick={onCreate}
-          className="size-7 rounded-md border-none bg-hover px-0 text-text-2"
-        >
-          <Plus className="size-3.5" strokeWidth={2.2} />
-        </Button>
+        {onCreate && (
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            aria-label="Створити епік"
+            onClick={onCreate}
+            className="size-7 rounded-md border-none bg-hover px-0 text-text-2"
+          >
+            <Plus className="size-3.5" strokeWidth={2.2} />
+          </Button>
+        )}
       </div>
 
       <button

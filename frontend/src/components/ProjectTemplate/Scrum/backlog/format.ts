@@ -8,7 +8,6 @@ export const formatDate = (iso: string) => dateFormat.format(new Date(iso))
 export const formatRange = (start: string | null, end: string | null) =>
   start && end ? `${formatDate(start)} – ${formatDate(end)}` : "дати не задано"
 
-/** plural(3, ["задача", "задачі", "задач"]) → "задачі" */
 export const plural = (n: number, [one, few, many]: [string, string, string]) => {
   const mod10 = n % 10
   const mod100 = n % 100
@@ -26,7 +25,6 @@ export const daysLeft = (end: string | null) => {
   return Math.max(0, Math.ceil(ms / 86_400_000))
 }
 
-/** «щойно», «15 хв тому», «3 год тому», «2 дні тому» */
 export const timeAgo = (iso: string) => {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
   if (minutes < 1) return "щойно"

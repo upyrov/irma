@@ -41,7 +41,8 @@ function RouteComponent() {
   if (view.isLoading || membersQ.isPending) return <PageState loading />
   if (!project) return <PageState error={view.error} />
 
-  // Додати можна лише когось із команди проєкту — шукаємо id за username
+  const canManage = view.role === "Owner" || view.role === "Admin"
+
   const teamMembers = teams.find((t) => t.id === project.teamId)?.members ?? []
 
   const addMember = ({ username, role }: { username: string; role: ProjectRole }) => {
@@ -80,12 +81,22 @@ function RouteComponent() {
           <p className="m-0 text-[15px] text-muted">Хто має доступ до проєкту і що може робити.</p>
         </div>
 
-        <AddMemberForm
-          existingUsernames={members.map((m) => m.username.toLowerCase())}
-          onAdd={addMember}
-        />
+        {canManage ? (
+          <AddMemberForm
+            existingUsernames={members.map((m) => m.username.toLowerCase())}
+            onAdd={addMember}
+          />
+        ) : (
+          <p className="m-0 rounded-[14px] border border-border bg-white px-5 py-4 text-sm text-text-2">
+            Додавати учасників і змінювати ролі можуть лише Owner та Admin проєкту.
+          </p>
+        )}
 
-        <MembersTable members={members} taskCounts={taskCounts} onRoleChange={changeRole} />
+        <MembersTable
+          members={members}
+          taskCounts={taskCounts}
+          onRoleChange={canManage ? changeRole : undefined}
+        />
 
         <PermissionsTable />
       </div>

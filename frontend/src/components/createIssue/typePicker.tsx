@@ -1,7 +1,6 @@
 import { type TaskType, TaskTypeIcon, taskTypes } from "#/components/ui/task-type"
 
 type Props = {
-  /** Типи, доступні в шаблоні проєкту */
   types: TaskType[]
   value: TaskType
   onChange: (type: TaskType) => void
@@ -13,7 +12,6 @@ export const TypePicker = ({ types, value, onChange }: Props) => {
       <legend className="mb-2 p-0 text-sm font-semibold">Тип</legend>
       <div
         className="grid gap-2"
-        // Усі типи в один рядок, скільки б їх не було
         style={{ gridTemplateColumns: `repeat(${types.length}, minmax(0, 1fr))` }}
       >
         {types.map((t) => (

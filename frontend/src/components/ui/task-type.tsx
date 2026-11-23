@@ -53,7 +53,6 @@ function TaskTypeIcon({
   )
 }
 
-/** Іконка + назва типу задачі */
 function TaskTypeLabel({
   type,
   className,

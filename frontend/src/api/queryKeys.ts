@@ -1,10 +1,5 @@
 import type { Guid } from "#/types/api"
 
-/**
- * Ключі кешу TanStack Query.
- * Усе, що належить проєкту, лежить під ["projects", id] — щоб після змін
- * (старт спринту, нова задача) можна було одним рядком оновити всі його дані.
- */
 export const queryKeys = {
   auth: {
     me: ["auth", "me"] as const,
@@ -15,7 +10,6 @@ export const queryKeys = {
   },
   projects: {
     list: ["projects", "list"] as const,
-    /** Префікс для всіх даних конкретного проєкту */
     scope: (projectId: Guid) => ["projects", projectId] as const,
     members: (projectId: Guid) => ["projects", projectId, "members"] as const,
     epics: (projectId: Guid) => ["projects", projectId, "epics"] as const,

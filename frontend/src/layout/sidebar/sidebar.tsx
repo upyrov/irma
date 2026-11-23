@@ -5,10 +5,6 @@ import { Logo } from "./componennts/logo"
 import { Navigation } from "./componennts/navigation"
 import { UserMenu } from "./componennts/userMenu"
 
-/**
- * Оболонка сайдбару: завжди на всю висоту екрана, прилипає при прокрутці
- * сторінки, а якщо вміст не влазить — прокручується сама.
- */
 export function SidebarShell({
   children,
   className,

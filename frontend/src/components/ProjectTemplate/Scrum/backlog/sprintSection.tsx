@@ -16,6 +16,7 @@ type Props = IssueDragProps & {
   onDropIssue: (issueId: string) => void
   onEdit?: () => void
   onStart?: () => void
+  startHint?: string
 }
 
 export const SprintSection = ({
@@ -26,6 +27,7 @@ export const SprintSection = ({
   onDropIssue,
   onEdit,
   onStart,
+  startHint = "Спершу завершіть активний спринт",
   ...drag
 }: Props) => {
   const [collapsed, setCollapsed] = useState(false)
@@ -65,8 +67,7 @@ export const SprintSection = ({
           size="xs"
           onClick={onStart}
           disabled={!onStart}
-          // У проєкті може бути лише один активний спринт
-          title={onStart ? undefined : "Спершу завершіть активний спринт"}
+          title={onStart ? undefined : startHint}
           className="px-3.5"
         >
           <Play className="size-3.5 fill-current" />

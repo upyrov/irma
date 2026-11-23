@@ -1,5 +1,7 @@
 using Irma.BLL.DTOs;
+using System.Security.Claims;
 using Irma.BLL.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Irma.WebAPI.Controllers;
@@ -10,10 +12,27 @@ public class AuthController : ControllerBase
 {
     private const string AuthCookieName = "auth_token";
     private readonly IAuthService _authService;
+    private readonly IUserService _userService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IUserService userService)
     {
         _authService = authService;
+        _userService = userService;
+    }
+
+    /// <summary>GET /api/auth/me — перевірка поточної сесії (401, якщо cookie немає або вона недійсна)</summary>
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<UserDto>> Me(CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userService.GetCurrentUserAsync(userId, cancellationToken);
+        return user is null ? Unauthorized() : Ok(user);
     }
 
     [HttpPost("register")]

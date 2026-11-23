@@ -29,7 +29,7 @@ export const IssueRow = ({
     <div
       role="button"
       tabIndex={0}
-      draggable
+      draggable={!!onDragStart}
       onDragStart={(e) => {
         e.dataTransfer.setData(ISSUE_MIME, issue.id)
         e.dataTransfer.effectAllowed = "move"
@@ -39,11 +39,15 @@ export const IssueRow = ({
       onClick={() => onOpen?.(issue.id)}
       onKeyDown={(e) => e.key === "Enter" && onOpen?.(issue.id)}
       className={cn(
-        "flex h-12 cursor-grab items-center gap-3 border-b border-hover bg-white px-[18px] text-ink outline-none hover:bg-[#FAFBFC] focus-visible:bg-primary-soft active:cursor-grabbing",
+        "flex h-12 items-center gap-3 border-b border-hover bg-white px-[18px] text-ink outline-none hover:bg-[#FAFBFC] focus-visible:bg-primary-soft",
+        onDragStart ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         isDragging && "opacity-40"
       )}
     >
-      <GripVertical aria-hidden="true" className="size-3.5 shrink-0 text-subtle" />
+      <GripVertical
+        aria-hidden="true"
+        className={cn("size-3.5 shrink-0 text-subtle", !onDragStart && "invisible")}
+      />
       <TaskTypeIcon
         type={issue.type}
         role="img"

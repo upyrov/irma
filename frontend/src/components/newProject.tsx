@@ -3,11 +3,13 @@ import { type FormEvent, useState } from "react";
 import { errorMessage } from "#/api/hooks/useAuth";
 import { useCreateProject } from "#/api/hooks/useProjects";
 import { useTeams } from "#/api/hooks/useTeams";
+import { projectKeyOf } from "#/api/adapters";
 import type { ProjectTemplate } from "#/types/api";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
+import { NewTeam } from "./newTeam";
 
 type Props = {
     setIsOpenNewProject: (value: boolean) => void,
@@ -22,6 +24,8 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
     const [description, setDescription] = useState("")
     const [template, setTemplate] = useState<ProjectTemplate>("Scrum")
     const [touched, setTouched] = useState(false)
+    const [creatingTeam, setCreatingTeam] = useState(false)
+    const key = name.trim() ? projectKeyOf(name.trim()) : null
 
     const submit = (e: FormEvent) => {
         e.preventDefault()
@@ -72,7 +76,6 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
     <div className="flex flex-col gap-5 px-7 py-6">
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
         <div className="flex flex-col gap-1.5">
-          {/* <label htmlFor="cp-name" className="text-sm font-semibold">Назва проєкту</label> */}
           <Label >Назва проєкту</Label>
           <input
             id="cp-name"
@@ -80,8 +83,14 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             aria-invalid={touched && !name.trim()}
+            aria-describedby="cp-key"
             className="h-11 rounded-[10px] border border-border-input px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
           />
+          {key && (
+            <p id="cp-key" className="m-0 text-[13px] text-muted">
+              Ключі задач: {key}-1, {key}-2…
+            </p>
+          )}
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="cp-team" className="text-sm font-semibold">Команда</label>
@@ -95,6 +104,13 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
             ))}
           </SelectContent>
         </Select>
+          <button
+            type="button"
+            onClick={() => setCreatingTeam(true)}
+            className="self-start text-[13px] font-semibold text-primary hover:text-primary-hover"
+          >
+            + Нова команда
+          </button>
         </div>
       </div>
 
@@ -147,7 +163,6 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
       </fieldset>
     </div>
 
-
     {(createProject.error || (touched && (!name.trim() || !teamId))) && (
       <p className="m-0 px-7 pb-3 text-sm text-danger-text">
         {createProject.error ? errorMessage(createProject.error) : "Вкажіть назву проєкту та команду"}
@@ -163,6 +178,9 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
         </Button>
     </div>
   </form>
+            {creatingTeam && (
+                <NewTeam onClose={() => setCreatingTeam(false)} onCreated={(team) => setTeamId(team.id)} />
+            )}
         </div>
   
 );

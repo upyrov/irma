@@ -10,14 +10,11 @@ type Props = {
   projectName: string
   pageLabel: string
   searchPlaceholder?: string
-  /** Без search / onSearchChange поле пошуку не показується */
   search?: string
   onSearchChange?: (value: string) => void
-  /** Додаткові класи для поля пошуку (напр. ширина) */
   searchClassName?: string
   showCreate?: boolean
   onCreate?: () => void
-  /** Текст, іконка та колір кнопки створення — за замовчуванням «+ Створити» */
   createLabel?: string
   createIcon?: ReactNode
   createVariant?: "default" | "danger"

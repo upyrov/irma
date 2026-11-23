@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 
-import { useProjectView } from "#/api/hooks/useProjectView"
+import { createIssueErrorMessage, useProjectView } from "#/api/hooks/useProjectView"
 import { nextIssueKey } from "#/components/createIssue/buildIssue"
 import { CreateIssueModal } from "#/components/createIssue/createIssueModal"
 import type { NewIssueDefaults } from "#/components/createIssue/types"
@@ -17,7 +17,6 @@ import { SprintSection } from "#/components/ProjectTemplate/Scrum/backlog/sprint
 import { BacklogSection } from "#/components/ProjectTemplate/Scrum/backlog/backlogSection"
 
 export const Route = createFileRoute("/_app/projects/$projectId/backlog")({
-  // Беклог є лише в Scrum: для інших шаблонів ведемо деінде ще до рендеру
   beforeLoad: guardSection("backlog"),
   component: RouteComponent,
 })
@@ -26,14 +25,11 @@ function RouteComponent() {
   const { projectId } = Route.useParams()
   const view = useProjectView(projectId, { backlog: true })
   const { project, stages, members, epics, sprints, currentUserId } = view
-  /** Задачі беклогу та запланованих спринтів */
   const issues = view.backlogIssues
-  /** Усі задачі проєкту — для прогресу епіків і лічильника активного спринту */
   const allIssues = view.issues
   const [search, setSearch] = useState("")
   const [selectedEpicId, setSelectedEpicId] = useState<string | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
-  // null — модалка закрита; інакше — з якими значеннями її відкрили
   const [createDefaults, setCreateDefaults] = useState<NewIssueDefaults | null>(null)
   const [openIssueId, setOpenIssueId] = useState<string | null>(null)
 
@@ -76,12 +72,10 @@ function RouteComponent() {
     view.createSprint.mutate({
       name: `Спринт ${sprints.length + 1}`,
       goal: null,
-      // Дати поставить бекенд при старті (сьогодні + 2 тижні)
       startDate: null,
       endDate: null,
     })
 
-  /** Швидке створення внизу беклогу — лише тип і назва, решта за замовчуванням */
   const quickCreate = ({ type, title }: { type: TaskType; title: string }) =>
     view.createIssue({
       type,
@@ -98,9 +92,12 @@ function RouteComponent() {
   if (view.isLoading) return <PageState loading />
   if (!project) return <PageState error={view.error} />
 
+  const { canEdit, canManageSprints } = view
+  const createErrorText = (err: unknown) => createIssueErrorMessage(err)
+
   const dragProps = {
     draggingId,
-    onDragStart: setDraggingId,
+    onDragStart: canEdit ? setDraggingId : undefined,
     onDragEnd: () => setDraggingId(null),
     onOpen: setOpenIssueId,
   }
@@ -113,8 +110,8 @@ function RouteComponent() {
         searchPlaceholder="Пошук задач"
         search={search}
         onSearchChange={setSearch}
-        // Якщо зліва вибрано епік — нова задача одразу в ньому
         onCreate={() => setCreateDefaults({ epicId: selectedEpicId ?? undefined })}
+        showCreate={canEdit}
       />
 
       <ErrorBanner error={view.error} />
@@ -146,7 +143,7 @@ function RouteComponent() {
           progress={epicProgress}
           selectedId={selectedEpicId}
           onSelect={setSelectedEpicId}
-          onCreate={() => setCreateDefaults({ type: "epic" })}
+          onCreate={canEdit ? () => setCreateDefaults({ type: "epic" }) : undefined}
         />
 
         <div className="flex min-w-0 flex-[999_1_600px] flex-col gap-5">
@@ -159,7 +156,9 @@ function RouteComponent() {
               sprint={activeSprint}
               projectId={projectId}
               issueCount={allIssues.filter((i) => i.sprintId === activeSprint.id).length}
-              onComplete={() => view.completeSprint.mutate(activeSprint.id)}
+              onComplete={
+                canManageSprints ? () => view.completeSprint.mutate(activeSprint.id) : undefined
+              }
             />
           )}
 
@@ -171,7 +170,16 @@ function RouteComponent() {
               epicsById={epicsById}
               canDrop={!!draggingIssue && draggingIssue.sprintId !== sprint.id}
               onDropIssue={(id) => moveIssue(id, sprint.id)}
-              onStart={activeSprint ? undefined : () => view.startSprint.mutate(sprint.id)}
+              onStart={
+                !canManageSprints || activeSprint
+                  ? undefined
+                  : () => view.startSprint.mutate(sprint.id)
+              }
+              startHint={
+                canManageSprints
+                  ? "Спершу завершіть активний спринт"
+                  : "Запускати спринти можуть лише Owner та Admin"
+              }
               {...dragProps}
             />
           ))}
@@ -181,8 +189,9 @@ function RouteComponent() {
             epicsById={epicsById}
             canDrop={!!draggingIssue && draggingIssue.sprintId !== null}
             onDropIssue={(id) => moveIssue(id, null)}
-            onCreateIssue={quickCreate}
-            onCreateSprint={createSprint}
+            onCreateIssue={canEdit ? quickCreate : undefined}
+            formatCreateError={createErrorText}
+            onCreateSprint={canManageSprints ? createSprint : undefined}
             {...dragProps}
           />
         </div>

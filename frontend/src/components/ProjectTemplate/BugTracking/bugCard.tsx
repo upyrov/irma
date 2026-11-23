@@ -11,19 +11,31 @@ import { TaskTypeIcon, taskTypes } from "#/components/ui/task-type"
 type Props = {
   issue: Issue
   isDragging?: boolean
+  canDrag?: boolean
+  showLock?: boolean
   onDragStart?: (id: string) => void
   onDragEnd?: () => void
   onOpen?: (id: string) => void
 }
 
-export const BugCard = ({ issue, isDragging, onDragStart, onDragEnd, onOpen }: Props) => {
+export const BugCard = ({
+  issue,
+  isDragging,
+  canDrag = true,
+  showLock = !canDrag,
+  onDragStart,
+  onDragEnd,
+  onOpen,
+}: Props) => {
   return (
     // biome-ignore lint/a11y/useSemanticElements: картка перетягується, тож не <button>
     <div
       role="button"
       tabIndex={0}
-      draggable
+      draggable={canDrag}
+      title={showLock ? "Статус може змінити лише виконавець або адміністратор" : undefined}
       onDragStart={(e) => {
+        if (!canDrag) return e.preventDefault()
         e.dataTransfer.setData(ISSUE_MIME, issue.id)
         e.dataTransfer.effectAllowed = "move"
         onDragStart?.(issue.id)
@@ -32,7 +44,8 @@ export const BugCard = ({ issue, isDragging, onDragStart, onDragEnd, onOpen }: P
       onClick={() => onOpen?.(issue.id)}
       onKeyDown={(e) => e.key === "Enter" && onOpen?.(issue.id)}
       className={cn(
-        "flex cursor-grab flex-col gap-2.5 rounded-[10px] border border-border bg-white px-3.5 py-3 text-ink shadow-[0_1px_2px_rgba(22,24,29,0.06)] outline-none hover:border-border-input focus-visible:border-primary active:cursor-grabbing",
+        "flex flex-col gap-2.5 rounded-[10px] border border-border bg-white px-3.5 py-3 text-ink shadow-[0_1px_2px_rgba(22,24,29,0.06)] outline-none hover:border-border-input focus-visible:border-primary",
+        canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         isDragging && "rotate-[-1.5deg] border-primary opacity-50"
       )}
     >

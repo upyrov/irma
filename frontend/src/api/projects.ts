@@ -1,4 +1,3 @@
-// 2.2 Проєкти, учасники, ролі, епіки
 import type {
   AddProjectMemberDto,
   BoardIssueDto,
@@ -43,7 +42,6 @@ const toProjectDto = (p: MockProject): ProjectDto =>
     members: toMemberDtos(p),
   })
 
-/** Ключ задач з назви проєкту: «Мобільний клієнт» → «МК», «Jira-аналог» → «JA» */
 const makeKey = (name: string) => {
   const letters = name
     .split(/[\s-]+/)
@@ -103,7 +101,6 @@ const mock = {
 
     const existing = project.members.find((m) => m.userId === dto.userId)
     if (existing) {
-      // Той самий ендпоінт керує ролями (RBAC): існуючому учаснику міняємо роль
       if (existing.role === "Owner") fail(400, "Роль Owner змінити не можна")
       existing.role = dto.role
     } else {
@@ -127,32 +124,26 @@ const mock = {
 }
 
 export const projectsApi = {
-  /** GET /api/projects — проєкти поточного користувача */
   list: () => (USE_MOCKS ? mock.list() : http.get<ProjectDto[]>("/api/projects")),
 
-  /** POST /api/projects — створення проєкту з вибором шаблону (колонки створюються автоматично) */
   create: (dto: ProjectCreateDto) =>
     USE_MOCKS ? mock.create(dto) : http.post<ProjectDto>("/api/projects", dto),
 
-  /** GET /api/projects/{id}/members — учасники проєкту (для Assignee у задачах) */
   members: (projectId: Guid) =>
     USE_MOCKS
       ? mock.members(projectId)
       : http.get<ProjectMemberDto[]>(`/api/projects/${projectId}/members`),
 
-  /** POST /api/projects/{id}/members — додати учасника (з команди проєкту) з роллю; повертає його */
   addMember: (projectId: Guid, dto: AddProjectMemberDto) =>
     USE_MOCKS
       ? mock.addMember(projectId, dto)
       : http.post<ProjectMemberDto>(`/api/projects/${projectId}/members`, dto),
 
-  /** GET /api/projects/{id}/epics — усі епіки проєкту */
   epics: (projectId: Guid) =>
     USE_MOCKS
       ? mock.epics(projectId)
       : http.get<BoardIssueDto[]>(`/api/projects/${projectId}/epics`),
 
-  /** GET /api/projects/{id}/my-role — роль поточного користувача в проєкті */
   myRole: (projectId: Guid): Promise<ProjectRole | null> =>
     (USE_MOCKS
       ? mock.myRole(projectId)

@@ -22,22 +22,18 @@ const initialFilters: BoardFilterState = {
 type Props = {
   view: ProjectView
   project: Project
-  /** Активний спринт (Scrum) — показуються лише його задачі; null — усі задачі (Kanban) */
   sprint: Sprint | null
   pageLabel: string
 }
 
-/** Спільна дошка для шаблонів: шапка, заголовок, фільтри, колонки з drag'n'drop */
 export const BoardView = ({ view, project, sprint, pageLabel }: Props) => {
-  const { issues, stages, members, epics, sprints, currentUserId } = view
+  const { issues, stages, members, epics, sprints, currentUserId, canEdit, canChangeStatus } = view
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState(initialFilters)
   const [draggingId, setDraggingId] = useState<string | null>(null)
-  // null — модалка закрита; інакше — з якими значеннями її відкрили
   const [createDefaults, setCreateDefaults] = useState<NewIssueDefaults | null>(null)
   const [openIssueId, setOpenIssueId] = useState<string | null>(null)
 
-  // Scrum: за замовчуванням — у поточний спринт, щоб задача одразу зʼявилась на дошці
   const openCreate = (stageId?: string) =>
     setCreateDefaults({ stageId, sprintId: sprint?.id })
 
@@ -46,7 +42,6 @@ export const BoardView = ({ view, project, sprint, pageLabel }: Props) => {
     [epics]
   )
 
-  /** Колонка задачі; якщо такої стадії на дошці немає — перша колонка */
   const stageOf = (issue: Issue) =>
     stages.some((s) => s.id === issue.stageId) ? issue.stageId : stages[0]?.id
 
@@ -70,12 +65,16 @@ export const BoardView = ({ view, project, sprint, pageLabel }: Props) => {
 
   const draggingIssue = issues.find((i) => i.id === draggingId)
 
+  const canDrag = (issue: Issue) => canChangeStatus(issue.assignee?.id)
+
   const moveIssue = (issueId: string, stageId: string) => {
-    view.moveToStage(issueId, stageId)
+    const issue = issues.find((i) => i.id === issueId)
+    if (issue && canDrag(issue)) view.moveToStage(issueId, stageId)
     setDraggingId(null)
   }
 
-  const completeSprint = () => sprint && view.completeSprint.mutate(sprint.id)
+  const completeSprint =
+    view.canManageSprints && sprint ? () => view.completeSprint.mutate(sprint.id) : undefined
 
   return (
     <div className="flex min-w-0 flex-col">
@@ -86,6 +85,7 @@ export const BoardView = ({ view, project, sprint, pageLabel }: Props) => {
         search={search}
         onSearchChange={setSearch}
         onCreate={() => openCreate()}
+        showCreate={canEdit}
       />
 
       <ErrorBanner error={view.error} />
@@ -99,7 +99,6 @@ export const BoardView = ({ view, project, sprint, pageLabel }: Props) => {
         members={members}
         currentUserId={currentUserId}
         epics={epics}
-        // Kanban без спринтів — поле «Спринт» не показуємо
         sprints={sprint ? sprints.filter((s) => s.status !== "closed") : undefined}
         defaults={createDefaults ?? undefined}
         onCreate={view.createIssue}
@@ -130,12 +129,16 @@ export const BoardView = ({ view, project, sprint, pageLabel }: Props) => {
                 stage={stage}
                 issues={visibleIssues.filter((i) => stageOf(i) === stage.id)}
                 epicsById={epicsById}
-                canDrop={!!draggingIssue && stageOf(draggingIssue) !== stage.id}
+                canDrop={
+                  !!draggingIssue && canDrag(draggingIssue) && stageOf(draggingIssue) !== stage.id
+                }
+                canDrag={canDrag}
+                showLocks={canEdit}
                 onDropIssue={(id) => moveIssue(id, stage.id)}
                 draggingId={draggingId}
                 onDragStart={setDraggingId}
                 onDragEnd={() => setDraggingId(null)}
-                onCreate={() => openCreate(stage.id)}
+                onCreate={canEdit ? () => openCreate(stage.id) : undefined}
                 onOpen={setOpenIssueId}
               />
             ))}

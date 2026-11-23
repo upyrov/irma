@@ -9,7 +9,6 @@ export type Assignee = { id: string; name: string; initials: string; color: stri
 export type Stage = {
   id: string
   name: string
-  /** Назва в нижньому регістрі («in progress») — щоб чіпляти кольори / підказки колонок */
   key: string
   isDone: boolean
 }
@@ -25,7 +24,6 @@ export type Sprint = {
   id: string
   name: string
   goal: string | null
-  /** null — дати ще не задано (запланований спринт) */
   startDate: string | null
   endDate: string | null
   status: SprintStatus
@@ -43,6 +41,5 @@ export type Issue = {
   stageId: string
   sprintId: string | null
   done: boolean
-  /** ISO-дата створення (для «2 дні тому» на дошці багів) */
   createdAt?: string
 }

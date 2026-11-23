@@ -1,4 +1,3 @@
-// 2.3 Scrum: спринти та беклог
 import type { BoardIssueDto, Guid, SprintCreateDto, SprintDto } from "#/types/api"
 import { http, USE_MOCKS } from "./client"
 import {
@@ -75,7 +74,6 @@ const mock = {
     requireProjectRole(sprint.projectId, MANAGERS)
     if (sprint.status !== "Active") fail(409, "Завершити можна лише активний спринт")
 
-    // Незавершені задачі (не в останній колонці) повертаються в беклог
     const doneStage = lastStageId(sprint.projectId)
     for (const issue of db.issues) {
       if (issue.sprintId === sprint.id && issue.stageId !== doneStage) issue.sprintId = null
@@ -90,7 +88,6 @@ const mock = {
     const activeIds = new Set(
       db.sprints.filter((s) => s.projectId === projectId && s.status === "Active").map((s) => s.id)
     )
-    // «Без активного спринту»: беклог + запланованих спринтів; епіки окремо (/epics)
     return db.issues
       .filter(
         (i) =>
@@ -103,34 +100,26 @@ const mock = {
 }
 
 export const sprintsApi = {
-  /** GET /api/projects/{id}/sprints — усі спринти проєкту */
   list: (projectId: Guid) =>
     USE_MOCKS
       ? mock.list(projectId)
       : http.get<SprintDto[]>(`/api/projects/${projectId}/sprints`),
 
-  /** POST /api/projects/{id}/sprints — новий спринт (статус Planned) */
   create: (projectId: Guid, dto: SprintCreateDto) =>
     USE_MOCKS
       ? mock.create(projectId, dto)
       : http.post<SprintDto>(`/api/projects/${projectId}/sprints`, dto),
 
-  /** PUT /api/sprints/{id}/start — запуск спринту (у проєкті лише один активний) */
   start: (sprintId: Guid) =>
     USE_MOCKS
       ? mock.start(sprintId).then(() => undefined)
       : http.put<void>(`/api/sprints/${sprintId}/start`),
 
-  /** PUT /api/sprints/{id}/complete — завершення; незавершені задачі йдуть у беклог */
   complete: (sprintId: Guid) =>
     USE_MOCKS
       ? mock.complete(sprintId).then(() => undefined)
       : http.put<void>(`/api/sprints/${sprintId}/complete`),
 
-  /**
-   * GET /api/projects/{id}/backlog — задачі без активного спринту.
-   * Включає задачі запланованих спринтів — групуй за `sprintId` на фронтенді.
-   */
   backlog: (projectId: Guid) =>
     USE_MOCKS
       ? mock.backlog(projectId)

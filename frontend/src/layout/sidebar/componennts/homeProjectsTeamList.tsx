@@ -1,16 +1,19 @@
-import { Link } from "@tanstack/react-router"
+import { useState } from "react"
 import { colorFor } from "#/api/adapters"
 import { useTeams } from "#/api/hooks/useTeams"
+import { NewTeam } from "#/components/newTeam"
 
 export const HomeProjectsTeamList = () => {
   const { data: teams = [] } = useTeams()
+  const [creating, setCreating] = useState(false)
 
     return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between px-2.5">
         <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted">Мої команди</span>
-        <Link
-          to="/teams"
+        <button
+          type="button"
+          onClick={() => setCreating(true)}
           aria-label="Створити команду"
           title="Створити команду"
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-hover hover:text-ink"
@@ -18,7 +21,7 @@ export const HomeProjectsTeamList = () => {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
             <path d="M12 5v14M5 12h14" />
           </svg>
-        </Link>
+        </button>
       </div>
 
       <ul className="flex flex-col pt-2 pl-2">
@@ -35,6 +38,8 @@ export const HomeProjectsTeamList = () => {
           </li>
         ))}
       </ul>
+
+      {creating && <NewTeam onClose={() => setCreating(false)} />}
     </div>
   );
 }

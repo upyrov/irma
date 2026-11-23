@@ -1,20 +1,9 @@
 import type { ProblemDetails } from "#/types/api"
 
-/**
- * За замовчуванням фронт ходить у справжній бекенд (Irma.WebAPI, профіль http → :5172).
- * Налаштування — у `.env.local`:
- *   VITE_API_URL=http://localhost:5172
- *   VITE_USE_MOCKS=true   ← працювати без бекенду, на заглушці в пам'яті (`mock/`)
- */
 export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
 
 const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:5172").replace(/\/$/, "")
 
-/**
- * Бекенд віддає помилки у двох форматах:
- *  - ApiExceptionHandler: `{ errorCode, message, statusCode, timestamp }`
- *  - валідація (FluentValidation / ProblemDetails): `{ title, errors: { Field: [...] } }`
- */
 type ErrorBody = ProblemDetails & { message?: string; errorCode?: string }
 
 export class ApiError extends Error {
@@ -46,7 +35,6 @@ const buildUrl = (path: string, query?: Query) => {
 async function request<T>(method: string, path: string, opts: RequestOptions = {}): Promise<T> {
   const res = await fetch(buildUrl(path, opts.query), {
     method,
-    // JWT лежить у HttpOnly cookie — браузер має надсилати її сам
     credentials: "include",
     headers: opts.body !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
@@ -58,7 +46,6 @@ async function request<T>(method: string, path: string, opts: RequestOptions = {
     throw new ApiError(res.status, problem)
   }
 
-  // 204 No Content / порожнє тіло
   const text = await res.text()
   return (text ? JSON.parse(text) : undefined) as T
 }

@@ -2,7 +2,6 @@ import { UserRound } from "lucide-react"
 import type { UserDto } from "#/types/api"
 
 type Props = {
-  /** null — не авторизований (гість); undefined — ще завантажується */
   user: UserDto | null | undefined
 }
 

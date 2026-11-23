@@ -1,5 +1,3 @@
-// Перетворення DTO бекенду → типи, з якими працюють компоненти (UI).
-// Компоненти писалися під моки (`Issue`, `Sprint`, `Stage`…), тож тут — один місток між ними.
 import type {
   Assignee,
   Epic,
@@ -24,15 +22,10 @@ import type {
   UserDto,
 } from "#/types/api"
 
-// ── Шаблони ──
-
-/** Назва шаблону в UI (бекенд: "BugTracking") */
 export type UiTemplate = "Scrum" | "Kanban" | "Bug tracking"
 
 export const toUiTemplate = (t: ProjectTemplate): UiTemplate =>
   t === "BugTracking" ? "Bug tracking" : t
-
-// ── Кольори та ініціали ──
 
 const palette = [
   "var(--color-primary)",
@@ -45,30 +38,22 @@ const palette = [
   "#7C3AED",
 ]
 
-/** Стабільний колір за id: той самий користувач / проєкт завжди одного кольору */
 export const colorFor = (id: string) => {
   let hash = 0
   for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0
   return palette[Math.abs(hash) % palette.length]
 }
 
-/** «artem.b» → «AB», «olena» → «OL» */
 export const initialsOf = (username: string) => {
   const parts = username.split(/[.\s_-]+/).filter(Boolean)
   const letters = parts.length >= 2 ? parts[0][0] + parts[1][0] : username.slice(0, 2)
   return letters.toUpperCase()
 }
 
-/**
- * Префікс ключів задач — так само, як рахує бекенд (IssueService.GetProjectPrefix):
- * перші 4 літери назви у верхньому регістрі, доповнені «X».
- */
 export const projectKeyOf = (name: string) => {
   const letters = [...name].filter((ch) => /\p{L}/u.test(ch)).join("").toUpperCase()
   return letters.slice(0, 4).padEnd(4, "X")
 }
-
-// ── Користувачі ──
 
 export const toAssignee = (u: UserDto): Assignee => ({
   id: u.id,
@@ -88,8 +73,6 @@ export const toProjectMember = (m: ProjectMemberDto): ProjectMember => ({
   username: m.username,
   role: toUiRole(m.role),
 })
-
-// ── Проєкти ──
 
 export type Project = {
   id: Guid
@@ -133,9 +116,6 @@ export const toProject = (p: ProjectDto, teams: TeamDto[] = []): Project => ({
   })),
 })
 
-// ── Колонки, спринти, задачі ──
-
-/** Остання колонка (за order) — «готово» */
 export const toStages = (stages: StageDto[]): Stage[] => {
   const sorted = [...stages].sort((a, b) => a.order - b.order)
   return sorted.map((s, i) => ({

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
 import type { NewIssueValues } from "#/components/createIssue/types"
-import type { Guid } from "#/types/api"
+import type { Guid, ProjectRole } from "#/types/api"
 import {
   type Project,
   toAssignee,
@@ -13,9 +13,10 @@ import {
   toSprint,
   toStages,
 } from "../adapters"
-import { useMe } from "./useAuth"
+import { errorMessage, useMe } from "./useAuth"
 import { boardQueryOptions, stagesQueryOptions, useCreateIssue, useUpdateIssue } from "./useIssues"
 import {
+  myRoleQueryOptions,
   projectEpicsQueryOptions,
   projectMembersQueryOptions,
   projectsQueryOptions,
@@ -29,7 +30,8 @@ import {
 } from "./useSprints"
 import { teamsQueryOptions } from "./useTeams"
 
-/** Проєкти поточного користувача у форматі UI (з назвою команди) */
+export const createIssueErrorMessage = (error: unknown) => errorMessage(error)
+
 export const useUiProjects = () => {
   const projects = useQuery(projectsQueryOptions)
   const teams = useQuery(teamsQueryOptions)
@@ -40,22 +42,18 @@ export const useUiProjects = () => {
   return { ...projects, data }
 }
 
-/** Один проєкт у форматі UI; `undefined` — ще вантажиться, `null` — немає доступу / не існує */
 export const useUiProject = (projectId: Guid | undefined): Project | null | undefined => {
   const { data } = useUiProjects()
   if (!data) return undefined
   return data.find((p) => p.id === projectId) ?? null
 }
 
-/**
- * Усе, що потрібно сторінкам проєкту (беклог, дошки, налаштування), у форматі UI,
- * плюс дії, які пишуть у бекенд.
- */
 export const useProjectView = (projectId: Guid, opts: { backlog?: boolean } = {}) => {
   const project = useUiProject(projectId)
   const isScrum = project?.template === "Scrum"
 
   const me = useMe()
+  const myRoleQ = useQuery(myRoleQueryOptions(projectId))
   const stagesQ = useQuery(stagesQueryOptions(projectId))
   const membersQ = useQuery(projectMembersQueryOptions(projectId))
   const epicsQ = useQuery({
@@ -81,7 +79,6 @@ export const useProjectView = (projectId: Guid, opts: { backlog?: boolean } = {}
   const epics = useMemo(() => (epicsQ.data ?? []).map(toEpic), [epicsQ.data])
   const sprints = useMemo(() => (sprintsQ.data ?? []).map(toSprint), [sprintsQ.data])
 
-  /** Усі задачі проєкту, крім епіків (епіки — окремо в `epics`) */
   const issues = useMemo(
     () =>
       (boardQ.data ?? [])
@@ -89,7 +86,6 @@ export const useProjectView = (projectId: Guid, opts: { backlog?: boolean } = {}
         .map((i) => toIssue(i, doneStageIds)),
     [boardQ.data, doneStageIds]
   )
-  /** Беклог Scrum: задачі без спринту та задачі запланованих спринтів */
   const backlogIssues = useMemo(
     () => (backlogQ.data ?? []).map((i) => toIssue(i, doneStageIds)),
     [backlogQ.data, doneStageIds]
@@ -102,7 +98,7 @@ export const useProjectView = (projectId: Guid, opts: { backlog?: boolean } = {}
   const completeSprint = useCompleteSprint(projectId)
 
   const createIssue = (values: NewIssueValues) =>
-    createMutation.mutate({
+    createMutation.mutateAsync({
       title: values.title,
       description: values.description,
       issueType: toServerType(values.type),
@@ -120,10 +116,17 @@ export const useProjectView = (projectId: Guid, opts: { backlog?: boolean } = {}
   const moveToSprint = (issueId: Guid, sprintId: Guid | null) =>
     updateMutation.mutate({ issueId, dto: { sprintId } })
 
+  const role: ProjectRole | null = myRoleQ.data ?? null
+  const canEdit = role !== null && role !== "Viewer"
+  const isManager = role === "Owner" || role === "Admin"
+  const currentUserId = me.data?.id
+  const canManageSprints = isManager
+  const canChangeStatus = (assigneeId: Guid | null | undefined) =>
+    canEdit && (isManager || !assigneeId || assigneeId === currentUserId)
+
   const queries = [stagesQ, membersQ, boardQ, ...(isScrum ? [sprintsQ] : [])]
   const error =
     queries.find((q) => q.error)?.error ??
-    createMutation.error ??
     updateMutation.error ??
     createSprint.error ??
     startSprint.error ??
@@ -132,7 +135,11 @@ export const useProjectView = (projectId: Guid, opts: { backlog?: boolean } = {}
 
   return {
     project,
-    currentUserId: me.data?.id,
+    currentUserId,
+    role,
+    canEdit,
+    canManageSprints,
+    canChangeStatus,
     stages,
     members,
     epics,

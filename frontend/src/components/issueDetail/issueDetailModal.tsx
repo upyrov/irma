@@ -1,4 +1,5 @@
 import { X } from "lucide-react"
+import { PageSpinner, Spinner } from "#/components/ui/spinner"
 import { Dialog } from "radix-ui"
 import { type FormEvent, type ReactNode, useEffect, useState } from "react"
 import { type Project, toAssignee, toServerPriority, toUiPriority, toUiType } from "#/api/adapters"
@@ -24,11 +25,9 @@ import { TaskTypeLabel } from "#/components/ui/task-type"
 import { Textarea } from "#/components/ui/textarea"
 import type { IssueUpdateDto } from "#/types/api"
 
-// Radix Select не приймає порожнє значення
 const NONE = "__none__"
 
 type Props = {
-  /** null — модалка закрита */
   issueId: string | null
   onClose: () => void
   view: ProjectView
@@ -45,10 +44,6 @@ const Field = ({ id, label, children }: { id: string; label: ReactNode; children
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleString("uk-UA", { dateStyle: "medium", timeStyle: "short" })
 
-/**
- * Деталі задачі: GET /api/issues/{id}, редагування через PUT /api/issues/{id},
- * коментарі — GET / POST /api/issues/{id}/comments.
- */
 export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => {
   const issueQ = useIssue(issueId ?? undefined)
   const commentsQ = useComments(issueId ?? undefined)
@@ -61,7 +56,6 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
   const [description, setDescription] = useState("")
   const [comment, setComment] = useState("")
 
-  // Підтягуємо текст у поля, коли задача завантажилась або відкрили іншу
   useEffect(() => {
     if (!issue) return
     setTitle(issue.title)
@@ -97,6 +91,9 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
     addComment.mutate({ text }, { onSuccess: () => setComment("") })
   }
 
+  const readOnly = !view.canEdit
+  const statusLocked = !issue || !view.canChangeStatus(issue.assignee?.id)
+
   const isEpic = issue?.issueType === "Epic"
   const showEpic = config.fields.epic && !isEpic && view.epics.length > 0
   const error = issueQ.error ?? update.error ?? addComment.error
@@ -109,7 +106,6 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
           aria-describedby={undefined}
           className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[860px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-[18px] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.3)] outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
-          {/* Шапка */}
           <div className="flex items-center justify-between gap-4 border-b border-border px-7 py-4">
             <Dialog.Title className="m-0 flex items-center gap-3 text-base font-normal">
               {issue ? (
@@ -141,15 +137,17 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
           )}
 
           {!issue ? (
-            <p className="m-0 px-7 py-6 text-sm text-muted">
-              {issueQ.isPending ? "Завантаження…" : "Задачу не знайдено."}
-            </p>
+            issueQ.isPending ? (
+              <PageSpinner label="Завантаження задачі" />
+            ) : (
+              <p className="m-0 px-7 py-6 text-sm text-muted">Задачу не знайдено.</p>
+            )
           ) : (
             <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto px-7 py-6 md:grid-cols-[minmax(0,1fr)_260px]">
-              {/* Ліва колонка: текст і коментарі */}
               <div className="flex min-w-0 flex-col gap-5">
                 <Input
                   aria-label="Назва"
+                  readOnly={readOnly}
                   maxLength={300}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -166,7 +164,8 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     onBlur={saveDescription}
-                    placeholder="Додайте опис…"
+                    readOnly={readOnly}
+                    placeholder={readOnly ? "Без опису" : "Додайте опис…"}
                     className="min-h-[120px] leading-normal"
                   />
                 </Field>
@@ -176,6 +175,7 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
                     Коментарі{commentsQ.data ? ` · ${commentsQ.data.length}` : ""}
                   </h3>
 
+                  {!readOnly && (
                   <form onSubmit={submitComment} className="flex flex-col gap-2">
                     <Textarea
                       aria-label="Новий коментар"
@@ -194,9 +194,12 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
                       Надіслати
                     </Button>
                   </form>
+                  )}
 
                   {commentsQ.isPending ? (
-                    <p className="m-0 text-sm text-muted">Завантаження…</p>
+                    <div className="flex justify-center py-4">
+                      <Spinner label="Завантаження коментарів" className="size-6" />
+                    </div>
                   ) : commentsQ.data?.length === 0 ? (
                     <p className="m-0 text-sm text-muted">Коментарів ще немає.</p>
                   ) : (
@@ -225,10 +228,24 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
                 </section>
               </div>
 
-              {/* Права колонка: атрибути */}
-              <div className="flex min-w-0 flex-col gap-4">
+              <fieldset disabled={readOnly} className="m-0 flex min-w-0 flex-col gap-4 border-none p-0">
+                {readOnly && (
+                  <p className="m-0 rounded-lg bg-hover px-3 py-2 text-xs text-text-2">
+                    Ви переглядач у цьому проєкті — змінювати задачі не можна.
+                  </p>
+                )}
+                {!readOnly && statusLocked && (
+                  <p className="m-0 rounded-lg bg-hover px-3 py-2 text-xs text-text-2">
+                    Задача призначена на @{issue.assignee?.username}. Статус і виконавця може змінити
+                    лише виконавець або адміністратор проєкту.
+                  </p>
+                )}
                 <Field id="id-stage" label="Статус">
-                  <Select value={issue.stageId} onValueChange={(stageId) => save({ stageId })}>
+                  <Select
+                    value={issue.stageId}
+                    disabled={statusLocked}
+                    onValueChange={(stageId) => save({ stageId })}
+                  >
                     <SelectTrigger id="id-stage" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -245,6 +262,7 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
                 <Field id="id-assignee" label="Виконавець">
                   <Select
                     value={issue.assignee?.id ?? NONE}
+                    disabled={statusLocked}
                     onValueChange={(v) => save({ assigneeId: v === NONE ? null : v })}
                   >
                     <SelectTrigger id="id-assignee" className="w-full">
@@ -299,7 +317,7 @@ export const IssueDetailModal = ({ issueId, onClose, view, project }: Props) => 
                 )}
 
                 <p className="m-0 text-xs text-muted">Створено {formatDate(issue.createdAt)}</p>
-              </div>
+              </fieldset>
             </div>
           )}
         </Dialog.Content>

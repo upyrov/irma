@@ -14,19 +14,30 @@ import { type TaskType, TaskTypeLabel, taskTypes } from "#/components/ui/task-ty
 const typeOptions = Object.keys(taskTypes) as TaskType[]
 
 type Props = {
-  onCreate: (data: { type: TaskType; title: string }) => void
+  onCreate: (data: { type: TaskType; title: string }) => Promise<unknown>
+  formatError: (error: unknown) => string
 }
 
-export const QuickCreateForm = ({ onCreate }: Props) => {
+export const QuickCreateForm = ({ onCreate, formatError }: Props) => {
   const [type, setType] = useState<TaskType>("task")
   const [title, setTitle] = useState("")
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     const trimmed = title.trim()
-    if (!trimmed) return
-    onCreate({ type, title: trimmed })
-    setTitle("")
+    if (!trimmed || pending) return
+    setPending(true)
+    setError(null)
+    try {
+      await onCreate({ type, title: trimmed })
+      setTitle("")
+    } catch (err) {
+      setError(formatError(err))
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -57,7 +68,14 @@ export const QuickCreateForm = ({ onCreate }: Props) => {
         id="qc-title"
         type="text"
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        maxLength={300}
+        disabled={pending}
+        onChange={(e) => {
+          setTitle(e.target.value)
+          setError(null)
+        }}
+        aria-invalid={!!error}
+        aria-describedby={error ? "qc-error" : undefined}
         placeholder="Що потрібно зробити? Enter — створити"
         className="h-10 min-w-[200px] flex-1 rounded-lg px-3 text-sm"
       />
@@ -66,11 +84,17 @@ export const QuickCreateForm = ({ onCreate }: Props) => {
         type="submit"
         variant="dark"
         size="sm"
-        disabled={!title.trim()}
+        disabled={!title.trim() || pending}
         className="rounded-lg px-4 disabled:opacity-50"
       >
-        Додати
+        {pending ? "Додаємо…" : "Додати"}
       </Button>
+
+      {error && (
+        <p id="qc-error" role="alert" className="m-0 basis-full text-[13px] text-danger-text">
+          {error}
+        </p>
+      )}
     </form>
   )
 }

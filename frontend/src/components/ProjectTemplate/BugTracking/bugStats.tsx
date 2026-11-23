@@ -4,7 +4,6 @@ import { FIXED_STAGE_KEYS } from "./bugConfig"
 
 type Props = { issues: Issue[]; stages: Stage[] }
 
-/** Лічильники над дошкою — рахуються з усіх багів, без урахування фільтрів */
 export const BugStats = ({ issues, stages }: Props) => {
   const fixedIds = new Set(
     stages.filter((s) => FIXED_STAGE_KEYS.includes(s.key) || s.isDone).map((s) => s.id)

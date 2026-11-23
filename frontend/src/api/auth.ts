@@ -1,4 +1,3 @@
-// 2.1 Автентифікація та користувачі
 import type { UserDto, UserLoginDto, UserRegisterDto } from "#/types/api"
 import { http, USE_MOCKS } from "./client"
 import { clone, db, delay, fail, newId, requireUser, session, toUserDto } from "./mock/db"
@@ -44,22 +43,17 @@ export const authApi: {
   logout: () => Promise<void>
   me: () => Promise<UserDto>
 } = {
-  /** POST /api/auth/register — реєстрація нового користувача */
   register: (dto: UserRegisterDto) =>
     USE_MOCKS
       ? mock.register(dto)
-      : // Бекенд лише ставить cookie і відповідає { message } — користувача беремо з /me
-        http.post("/api/auth/register", dto).then(() => authApi.me()),
+      : http.post("/api/auth/register", dto).then(() => authApi.me()),
 
-  /** POST /api/auth/login — вхід; бекенд ставить JWT у HttpOnly cookie */
   login: (dto: UserLoginDto) =>
     USE_MOCKS
       ? mock.login(dto)
       : http.post("/api/auth/login", dto).then(() => authApi.me()),
 
-  /** POST /api/auth/logout — вихід, видалення cookie сесії */
   logout: () => (USE_MOCKS ? mock.logout() : http.post<void>("/api/auth/logout")),
 
-  /** GET /api/users/me — перевірка поточної сесії (401, якщо не залогінений) */
-  me: () => (USE_MOCKS ? mock.me() : http.get<UserDto>("/api/users/me")),
+  me: () => (USE_MOCKS ? mock.me() : http.get<UserDto>("/api/auth/me")),
 }

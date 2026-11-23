@@ -4,7 +4,6 @@ import { BoardView } from "./board/boardView"
 
 type Props = { view: ProjectView; project: Project }
 
-/** Scrum-дошка: лише задачі активного спринту */
 export const ScrumBoard = ({ view, project }: Props) => {
   const activeSprint = view.sprints.find((s) => s.status === "active") ?? null
 

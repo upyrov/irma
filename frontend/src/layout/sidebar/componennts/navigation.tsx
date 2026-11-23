@@ -57,7 +57,6 @@ export const Navigation = () => {
     },
   ]
 
-  // Лише розділи, які є в шаблоні проєкту
   const sections = project
     ? allSections.filter((s) => hasSection(project.template, s.id))
     : []

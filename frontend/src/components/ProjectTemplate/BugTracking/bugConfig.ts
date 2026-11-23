@@ -1,7 +1,6 @@
 import type { Issue } from "#/components/ProjectTemplate/Scrum/backlog/types"
 import type { Priority } from "#/components/ui/priority"
 
-/** Колір крапки та підказка для кожної колонки дошки багів (ключ — назва колонки в нижньому регістрі) */
 export const bugStageMeta: Record<string, { dot: string; hint: string }> = {
   new: { dot: "bg-danger", hint: "Щойно повідомлені, ще не перевірені" },
   triage: { dot: "bg-orange", hint: "Відтворюємо і ставимо пріоритет" },
@@ -10,7 +9,6 @@ export const bugStageMeta: Record<string, { dot: string; hint: string }> = {
   verified: { dot: "bg-subtle", hint: "Перевірено й закрито" },
 }
 
-/** Баги в цих колонках уже виправлені (за назвою колонки) */
 export const FIXED_STAGE_KEYS = ["fixed", "verified"]
 
 const priorityRank: Record<Priority, number> = {
@@ -21,7 +19,6 @@ const priorityRank: Record<Priority, number> = {
   lowest: 4,
 }
 
-/** Спершу найважливіші; за однакового пріоритету — найстаріші */
 export const byPriority = (a: Issue, b: Issue) =>
   priorityRank[a.priority] - priorityRank[b.priority] ||
   (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
