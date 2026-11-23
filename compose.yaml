@@ -2,6 +2,8 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        - VITE_API_URL=http://localhost:5050
     ports:
       - "3000:3000"
     environment:

@@ -1,6 +1,4 @@
-import { type FormEvent, useState } from "react"
-import { Button } from "#/components/ui/button"
-import { Input } from "#/components/ui/input"
+import { useState } from "react"
 import { Label } from "#/components/ui/label"
 import {
   Select,
@@ -9,55 +7,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select"
+import { Spinner } from "#/components/ui/spinner"
+import { UserSearch } from "#/components/userSearch"
+import type { Guid, UserDto } from "#/types/api"
 import { assignableRoles, type ProjectRole, roleLabels } from "./types"
 
 type Props = {
-  existingUsernames: string[]
-  onAdd: (data: { username: string; role: ProjectRole }) => void
+  /** Учасники команди проєкту — додати в проєкт можна лише їх */
+  teamMembers: UserDto[]
+  existingUserIds: Guid[]
+  pending?: boolean
+  addedUsername?: string | null
+  onAdd: (data: { user: UserDto; role: ProjectRole }) => void
 }
 
-export const AddMemberForm = ({ existingUsernames, onAdd }: Props) => {
-  const [username, setUsername] = useState("")
+export const AddMemberForm = ({ teamMembers, existingUserIds, pending, addedUsername, onAdd }: Props) => {
   const [role, setRole] = useState<ProjectRole>("member")
-  const [error, setError] = useState<string | null>(null)
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    const name = username.trim().replace(/^@/, "")
-    if (!name) return setError("Вкажіть ім'я користувача")
-    if (existingUsernames.includes(name.toLowerCase()))
-      return setError("Цей користувач уже є в проєкті")
-    onAdd({ username: name, role })
-    setUsername("")
-    setError(null)
-  }
+  const available = teamMembers.filter((u) => !existingUserIds.includes(u.id))
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-[14px] border border-border bg-white p-[18px]"
-    >
+    <div className="flex flex-wrap items-start gap-3 rounded-[14px] border border-border bg-white p-[18px]">
       <div className="flex flex-[1_1_280px] flex-col gap-1.5">
-        <Label htmlFor="add-user">Додати учасника</Label>
-        <Input
-          id="add-user"
-          type="text"
-          value={username}
-          onChange={(e) => {
-            setUsername(e.target.value)
-            setError(null)
-          }}
-          placeholder="Ім'я користувача з команди"
-          aria-invalid={!!error}
-          aria-describedby={error ? "add-user-error" : undefined}
-          className="h-[42px] px-3 text-sm"
+        <Label>Додати учасника</Label>
+        <UserSearch
+          candidates={teamMembers}
+          excludeIds={existingUserIds}
+          disabled={pending}
+          label="Знайти учасника команди, щоб додати в проєкт"
+          onPick={(user) => onAdd({ user, role })}
         />
+        {pending && (
+          <p className="m-0 flex items-center gap-1.5 text-xs text-muted">
+            <Spinner className="size-3" label="Додаємо" /> Додаємо…
+          </p>
+        )}
+        {!pending && addedUsername && (
+          <p className="m-0 text-xs text-success-text" aria-live="polite">
+            @{addedUsername} тепер у проєкті
+          </p>
+        )}
+        {!pending && !addedUsername && available.length === 0 && (
+          <p className="m-0 text-xs text-muted">
+            Усі учасники команди вже в проєкті. Нових людей спершу додайте в команду.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-[0_1_180px] flex-col gap-1.5">
         <Label htmlFor="add-role">Роль</Label>
         <Select value={role} onValueChange={(v) => setRole(v as ProjectRole)}>
-          <SelectTrigger id="add-role" className="h-[42px] w-full text-sm">
+          <SelectTrigger id="add-role" className="h-10 w-full text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -69,20 +68,6 @@ export const AddMemberForm = ({ existingUsernames, onAdd }: Props) => {
           </SelectContent>
         </Select>
       </div>
-
-      <Button type="submit" size="sm" className="h-[42px] px-[18px]">
-        Додати
-      </Button>
-
-      {error && (
-        <p
-          id="add-user-error"
-          role="alert"
-          className="m-0 basis-full text-[13px] text-danger-text"
-        >
-          {error}
-        </p>
-      )}
-    </form>
+    </div>
   )
 }

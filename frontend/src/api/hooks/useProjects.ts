@@ -47,7 +47,13 @@ export const useCreateProject = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: projectsApi.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.projects.list }),
+    onSuccess: (project) => {
+      // Кладемо новий проєкт у кеш одразу, щоб guard маршруту знайшов його без 404
+      queryClient.setQueryData(projectsQueryOptions.queryKey, (old) =>
+        old && !old.some((p) => p.id === project.id) ? [...old, project] : old,
+      )
+      return queryClient.invalidateQueries({ queryKey: queryKeys.projects.list })
+    },
   })
 }
 

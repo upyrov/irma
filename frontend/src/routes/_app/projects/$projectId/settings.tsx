@@ -13,6 +13,7 @@ import { MembersTable } from "#/components/ProjectTemplate/Scrum/settings/member
 import { PermissionsTable } from "#/components/ProjectTemplate/Scrum/settings/permissionsTable"
 import type { ProjectRole } from "#/components/ProjectTemplate/Scrum/settings/types"
 import { guardSection } from "#/lib/projectTemplates"
+import type { UserDto } from "#/types/api"
 
 export const Route = createFileRoute("/_app/projects/$projectId/settings")({
   beforeLoad: guardSection("settings"),
@@ -26,7 +27,7 @@ function RouteComponent() {
   const membersQ = useQuery(projectMembersQueryOptions(projectId))
   const { data: teams = [] } = useTeams()
   const addMemberMutation = useAddProjectMember(projectId)
-  const [localError, setLocalError] = useState<string | null>(null)
+  const [addedUsername, setAddedUsername] = useState<string | null>(null)
 
   const members = useMemo(() => (membersQ.data ?? []).map(toProjectMember), [membersQ.data])
 
@@ -45,19 +46,16 @@ function RouteComponent() {
 
   const teamMembers = teams.find((t) => t.id === project.teamId)?.members ?? []
 
-  const addMember = ({ username, role }: { username: string; role: ProjectRole }) => {
-    const user = teamMembers.find((u) => u.username.toLowerCase() === username.toLowerCase())
-    addMemberMutation.reset()
-    if (!user) {
-      setLocalError(`@${username} немає в команді проєкту — спершу додайте його на сторінці «Команди»`)
-      return
-    }
-    setLocalError(null)
-    addMemberMutation.mutate({ userId: user.id, role: toServerRole(role) })
+  const addMember = ({ user, role }: { user: UserDto; role: ProjectRole }) => {
+    setAddedUsername(null)
+    addMemberMutation.mutate(
+      { userId: user.id, role: toServerRole(role) },
+      { onSuccess: () => setAddedUsername(user.username) },
+    )
   }
 
   const changeRole = (userId: string, role: ProjectRole) => {
-    setLocalError(null)
+    setAddedUsername(null)
     addMemberMutation.mutate({ userId, role: toServerRole(role) })
   }
 
@@ -65,13 +63,7 @@ function RouteComponent() {
     <div className="flex min-w-0 flex-col">
       <ProjectHeader projectName={project.name} pageLabel="Налаштування" showCreate={false} />
 
-      {localError ? (
-        <div role="alert" className="mx-8 mt-4 rounded-lg bg-danger-bg px-4 py-2.5 text-sm text-danger-text">
-          {localError}
-        </div>
-      ) : (
-        <ErrorBanner error={addMemberMutation.error ?? membersQ.error} />
-      )}
+      <ErrorBanner error={addMemberMutation.error ?? membersQ.error} />
 
       <div className="box-border flex max-w-[1080px] flex-col gap-6 px-8 py-7">
         <div>
@@ -83,7 +75,10 @@ function RouteComponent() {
 
         {canManage ? (
           <AddMemberForm
-            existingUsernames={members.map((m) => m.username.toLowerCase())}
+            teamMembers={teamMembers}
+            existingUserIds={members.map((m) => m.id)}
+            pending={addMemberMutation.isPending}
+            addedUsername={addedUsername}
             onAdd={addMember}
           />
         ) : (

@@ -40,8 +40,14 @@ export const guardSection =
     params: { projectId: string }
     context: { queryClient: QueryClient }
   }) => {
-    const projects = await context.queryClient.ensureQueryData(projectsQueryOptions)
-    const project = projects.find((p) => p.id === params.projectId)
+    const { queryClient } = context
+    const cached = await queryClient.ensureQueryData(projectsQueryOptions)
+    // Кеш може бути застарілим (напр. проєкт щойно створено) — перед 404 перепитуємо сервер
+    const project =
+      cached.find((p) => p.id === params.projectId) ??
+      (await queryClient.fetchQuery({ ...projectsQueryOptions, staleTime: 0 })).find(
+        (p) => p.id === params.projectId,
+      )
     if (!project) throw notFound()
     const template = toUiTemplate(project.template)
     if (hasSection(template, section)) return
