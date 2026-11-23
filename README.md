@@ -18,7 +18,7 @@ docker compose up --build -d
 docker compose ps
 ```
 
-Open [Irma](http://localhost:3000), choose **Log in**, and use the seeded mock account `artem.b` with password `password`. You can use the demo account to explore the existing sample data. The frontend uses in-memory mock data by default, so mock changes can disappear on reload and are never stored in PostgreSQL.
+Open [Irma](http://localhost:3000). Apply the database migrations below before using the API.
 
 Compose builds the frontend and backend images and pulls PostgreSQL 16. The frontend container serves the built Nitro output. Rebuild the image after changing frontend source or its build-time settings.
 
@@ -64,15 +64,15 @@ Use Scalar to inspect request schemas and response codes. Authentication uses a 
 
 ### Frontend API integration
 
-The frontend client selects live requests only when `VITE_USE_MOCKS=false`. Its API base URL comes from `VITE_API_URL`, which defaults to `http://localhost:5172` for the local .NET launch profile. From a browser on the Docker host, the Compose API is at `http://localhost:5050`.
+The frontend reads its API base URL from `VITE_API_URL`, which defaults to `http://localhost:5050` for both local .NET development and browser access to the Compose API. Stop the Compose backend before starting the local .NET backend if it is using port 5050.
 
-Vite reads these variables at build time. For the local Vite server, set them in `frontend/.env.local`. For Docker, supply them to `npm run build` in the Dockerfile builder stage and rebuild the image. The Docker build context excludes `.env.local`, and runtime environment variables do not rewrite the built browser bundle.
+Vite reads this variable at build time. For the local Vite server, set it in `frontend/.env.local`. For Docker, supply it to `npm run build` in the Dockerfile builder stage and rebuild the image. The Docker build context excludes `.env.local`, and runtime environment variables do not rewrite the built browser bundle.
 
-Live browser integration currently needs code and deployment changes. The frontend requests `/api/auth/me`, while the backend exposes the current user at `/api/users/me`. Ports 3000 and 5050 are different origins, and the backend currently has no CORS policy. A live setup also needs to account for the Secure authentication cookie and the frontend's credentialed requests. Use the default mock mode for the Compose demo and the API reference or an HTTP client for backend development.
+Live browser integration currently needs code and deployment changes. The frontend requests `/api/auth/me`, while the backend exposes the current user at `/api/users/me`. Ports 3000 and 5050 are different origins, and the backend currently has no CORS policy. A live setup also needs to account for the Secure authentication cookie and the frontend's credentialed requests. Use the API reference or an HTTP client for backend development.
 
 ## Development
 
-- [`frontend/src/routes/`](frontend/src/routes/) contains file-based routes for authentication, teams, and project views. [`frontend/src/api/`](frontend/src/api/) contains the HTTP client, mock data, and TanStack Query hooks.
+- [`frontend/src/routes/`](frontend/src/routes/) contains file-based routes for authentication, teams, and project views. [`frontend/src/api/`](frontend/src/api/) contains the HTTP client and TanStack Query hooks.
 - [`backend/Irma.WebAPI/`](backend/Irma.WebAPI/) contains the ASP.NET Core entry point, controllers, authentication setup, and API error handling.
 - [`backend/Irma.BLL/`](backend/Irma.BLL/) contains application services, DTOs, and FluentValidation rules.
 - [`backend/Irma.DAL/`](backend/Irma.DAL/) contains the EF Core context, entities, PostgreSQL mappings, and migrations.
@@ -92,4 +92,3 @@ Run `npm run check` for Biome checks and `npm run build` to produce the Nitro ou
 - **A published port is already in use.** Stop the process using it or change the host-side port in [`compose.yaml`](compose.yaml). Update the corresponding browser URL or database connection string.
 - **The API returns a missing-relation error.** Check that PostgreSQL is ready and apply the EF Core migrations to the Compose database.
 - **The API reference returns 404.** Confirm the backend is running with `ASPNETCORE_ENVIRONMENT=Development`, which enables Scalar and OpenAPI.
-- **Demo changes vanish after a refresh.** The default frontend uses in-memory data. The PostgreSQL volume preserves records written through the live backend.

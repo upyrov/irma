@@ -1,5 +1,5 @@
 export { authApi } from "./auth"
-export { ApiError, USE_MOCKS } from "./client"
+export { ApiError } from "./client"
 export { issuesApi } from "./issues"
 export { projectsApi } from "./projects"
 export { sprintsApi } from "./sprints"

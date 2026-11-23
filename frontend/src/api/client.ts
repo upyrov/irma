@@ -1,8 +1,6 @@
 import type { ProblemDetails } from "#/types/api"
 
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
-
-const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:5172").replace(/\/$/, "")
+const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:5050").replace(/\/$/, "")
 
 type ErrorBody = ProblemDetails & { message?: string; errorCode?: string }
 
