@@ -1,9 +1,13 @@
 import { useMemo, useState } from "react"
 import type { Epic, Issue, Sprint, Stage } from "#/components/ProjectTemplate/Scrum/backlog/types"
+import { buildIssue, nextIssueKey } from "#/components/createIssue/buildIssue"
+import { CreateIssueModal } from "#/components/createIssue/createIssueModal"
+import type { NewIssueDefaults, NewIssueValues } from "#/components/createIssue/types"
 import { ProjectHeader } from "#/components/projectHeader"
 import {
   backlogEpics,
   backlogIssues,
+  backlogSprints,
   currentUserId,
   projectMembers,
   type Project,
@@ -33,6 +37,18 @@ export const BoardView = ({ project, stages, sprint, pageLabel }: Props) => {
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState(initialFilters)
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  // null — модалка закрита; інакше — з якими значеннями її відкрили
+  const [createDefaults, setCreateDefaults] = useState<NewIssueDefaults | null>(null)
+
+  // Scrum: за замовчуванням — у поточний спринт, щоб задача одразу зʼявилась на дошці
+  const openCreate = (stageId?: string) =>
+    setCreateDefaults({ stageId, sprintId: sprint?.id })
+
+  const addIssue = (values: NewIssueValues) =>
+    setIssues((prev) => [
+      ...prev,
+      buildIssue(values, { issues: prev, projectKey: project.key, members: projectMembers, stages }),
+    ])
 
   const epicsById = useMemo(
     () => Object.fromEntries(backlogEpics.map((e) => [e.id, e])) as Record<string, Epic>,
@@ -79,6 +95,22 @@ export const BoardView = ({ project, stages, sprint, pageLabel }: Props) => {
         searchPlaceholder="Пошук на дошці"
         search={search}
         onSearchChange={setSearch}
+        onCreate={() => openCreate()}
+      />
+
+      <CreateIssueModal
+        open={createDefaults !== null}
+        onOpenChange={(open) => !open && setCreateDefaults(null)}
+        project={project}
+        nextKey={nextIssueKey(issues, project.key)}
+        stages={stages}
+        members={projectMembers}
+        currentUserId={currentUserId}
+        epics={backlogEpics}
+        // Kanban без спринтів — поле «Спринт» не показуємо
+        sprints={sprint ? backlogSprints.filter((s) => s.status !== "closed") : undefined}
+        defaults={createDefaults ?? undefined}
+        onCreate={addIssue}
       />
 
       <div className="flex min-w-0 flex-col gap-[18px] px-8 py-6">
@@ -104,6 +136,7 @@ export const BoardView = ({ project, stages, sprint, pageLabel }: Props) => {
                 draggingId={draggingId}
                 onDragStart={setDraggingId}
                 onDragEnd={() => setDraggingId(null)}
+                onCreate={() => openCreate(stage.id)}
               />
             ))}
           </div>

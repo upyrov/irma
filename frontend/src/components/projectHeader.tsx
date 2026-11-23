@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router"
+import { cn } from "cn"
 import { Plus, Search } from "lucide-react"
+import type { ReactNode } from "react"
 import { Button } from "#/components/ui/button"
 import { Input } from "#/components/ui/input"
 import { Label } from "#/components/ui/label"
@@ -11,8 +13,14 @@ type Props = {
   /** Без search / onSearchChange поле пошуку не показується */
   search?: string
   onSearchChange?: (value: string) => void
+  /** Додаткові класи для поля пошуку (напр. ширина) */
+  searchClassName?: string
   showCreate?: boolean
   onCreate?: () => void
+  /** Текст, іконка та колір кнопки створення — за замовчуванням «+ Створити» */
+  createLabel?: string
+  createIcon?: ReactNode
+  createVariant?: "default" | "danger"
 }
 
 export const ProjectHeader = ({
@@ -21,8 +29,12 @@ export const ProjectHeader = ({
   searchPlaceholder = "Пошук задач",
   search,
   onSearchChange,
+  searchClassName,
   showCreate = true,
   onCreate,
+  createLabel = "Створити",
+  createIcon = <Plus className="size-4" strokeWidth={2.2} />,
+  createVariant = "default",
 }: Props) => {
   return (
     <header className="box-border flex min-h-[68px] flex-wrap items-center gap-3 border-b border-border bg-white px-8 py-3.5">
@@ -54,15 +66,15 @@ export const ProjectHeader = ({
             placeholder={searchPlaceholder}
             value={search ?? ""}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-10 w-60 max-w-full bg-[#F8F9FB] pl-9 text-sm"
+            className={cn("h-10 w-60 max-w-full bg-[#F8F9FB] pl-9 text-sm", searchClassName)}
           />
         </div>
       )}
 
       {showCreate && (
-        <Button size="sm" onClick={onCreate}>
-          <Plus className="size-4" strokeWidth={2.2} />
-          Створити
+        <Button size="sm" variant={createVariant} onClick={onCreate}>
+          {createIcon}
+          {createLabel}
         </Button>
       )}
     </header>

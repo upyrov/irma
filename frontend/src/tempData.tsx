@@ -187,3 +187,49 @@ export const settingsMembers: ProjectMember[] = [
   { ...im, username: 'iryna.m', role: 'member' },
   { id: 'u5', name: 'Дмитро С.', initials: 'ДС', color: '#0E7490', username: 'dmytro.s', role: 'viewer' },
 ]
+
+// ---- Bug Tracking ----
+
+export const bugStages: Stage[] = [
+  { id: 'new', name: 'New', isDone: false },
+  { id: 'triage', name: 'Triage', isDone: false },
+  { id: 'progress', name: 'In Progress', isDone: false },
+  { id: 'fixed', name: 'Fixed', isDone: false },
+  { id: 'verified', name: 'Verified', isDone: true },
+]
+
+const ago = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString()
+const bug = (
+  n: number,
+  title: string,
+  priority: Issue['priority'],
+  stageId: string,
+  assignee: Assignee | null,
+  hoursAgo: number,
+): Issue => ({
+  id: `qa-${n}`,
+  key: `QA-${n}`,
+  title,
+  type: 'bug',
+  priority,
+  storyPoints: null,
+  assignee,
+  epicId: null,
+  stageId,
+  sprintId: null,
+  done: stageId === 'verified',
+  createdAt: ago(hoursAgo),
+})
+
+export const bugIssues: Issue[] = [
+  bug(1, 'Після логіну редірект на 404', 'highest', 'new', null, 2),
+  bug(2, 'Дата спринту зсувається на день у UTC+2', 'high', 'new', null, 20),
+  bug(3, 'Не прокручується список задач на iPhone SE', 'low', 'new', null, 50),
+  bug(4, 'Drag & drop дублює картку при швидкому перетягуванні', 'high', 'triage', im, 30),
+  bug(5, 'Пошук не знаходить задачі за ключем у нижньому регістрі', 'medium', 'triage', null, 70),
+  bug(6, 'Сесія злітає після оновлення сторінки', 'highest', 'progress', ab, 26),
+  bug(7, 'Аватар виконавця не оновлюється після зміни', 'lowest', 'progress', mt, 120),
+  bug(8, 'Подвійний клік «Створити» створює дві задачі', 'medium', 'fixed', ok, 96),
+  bug(9, 'Обрізається довга назва епіка в беклозі', 'low', 'verified', im, 200),
+  bug(10, 'Помилка 500 при порожній цілі спринту', 'high', 'verified', ab, 260),
+]

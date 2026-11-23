@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { BugBoard } from "#/components/ProjectTemplate/BugTracking/BugBoard"
 import { KanbanBoard } from "#/components/ProjectTemplate/Kanban/KanbanBoard"
 import { ScrumBoard } from "#/components/ProjectTemplate/Scrum/ScrumBoard"
 import { findProject, guardSection } from "#/lib/projectTemplates"
@@ -19,12 +20,7 @@ function BoardPage() {
       return <ScrumBoard project={project} />
     case "Kanban":
       return <KanbanBoard project={project} />
-    default:
-      // TODO: BugBoard для шаблону Bug Tracking
-      return (
-        <div className="p-8 text-muted">
-          Дошка для шаблону «{project.template}» ще в розробці
-        </div>
-      )
+    case "Bug tracking":
+      return <BugBoard project={project} />
   }
 }

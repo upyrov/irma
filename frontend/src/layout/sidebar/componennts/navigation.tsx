@@ -31,6 +31,7 @@ export const Navigation = () => {
   const { projectId = String(projects[0].id) } = useParams({ strict: false })
   const project = findProject(projectId)
   const isKanban = project?.template === "Kanban"
+  const isBugTracking = project?.template === "Bug tracking"
 
   const allSections: Section[] = [
     {
@@ -40,7 +41,7 @@ export const Navigation = () => {
     },
     {
       id: "board",
-      label: isKanban ? "Дошка" : "Активна дошка",
+      label: isBugTracking ? "Дошка багів" : isKanban ? "Дошка" : "Активна дошка",
       icon: icon(
         <>
           <rect x="3" y="4" width="18" height="16" rx="2" />

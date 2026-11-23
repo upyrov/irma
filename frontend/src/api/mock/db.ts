@@ -183,14 +183,32 @@ const comments: MockComment[] = [
 export const db = { users, teams, projects, stages, sprints, issues, comments }
 
 // ───────────────────────────── Сесія ─────────────────────────────
-// Імітує HttpOnly cookie: за замовчуванням залогінений artem.b, щоб сторінки одразу мали дані.
+// Імітує HttpOnly cookie: за замовчуванням — гість. Сесія переживає перезавантаження
+// (localStorage), як справжня cookie: увійшов — лишаєшся залогіненим, вийшов — гість.
+// На сервері (SSR) localStorage немає — там завжди гість.
 
-let sessionUserId: Guid | null = id(1)
+const SESSION_KEY = "irma-mock-session"
+
+const readSession = (): Guid | null => {
+  try {
+    return globalThis.localStorage?.getItem(SESSION_KEY) ?? null
+  } catch {
+    return null
+  }
+}
+
+let sessionUserId: Guid | null = readSession()
 
 export const session = {
   get: () => sessionUserId,
   set: (userId: Guid | null) => {
     sessionUserId = userId
+    try {
+      if (userId) globalThis.localStorage?.setItem(SESSION_KEY, userId)
+      else globalThis.localStorage?.removeItem(SESSION_KEY)
+    } catch {
+      // приватний режим / заблоковане сховище — сесія житиме до перезавантаження
+    }
   },
 }
 

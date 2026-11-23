@@ -10,8 +10,8 @@ export type ProjectSection = "backlog" | "board" | "settings"
 const templateFeatures: Record<Template, Record<ProjectSection, boolean>> = {
   Scrum: { backlog: true, board: true, settings: true },
   Kanban: { backlog: false, board: true, settings: true },
-  // Bug Tracking ще в розробці — усі розділи закриті
-  "Bug tracking": { backlog: false, board: false, settings: false },
+  // Bug Tracking: лише дошка багів (налаштування ще в розробці)
+  "Bug tracking": { backlog: false, board: true, settings: false },
 }
 
 const sectionOrder: ProjectSection[] = ["backlog", "board", "settings"]

@@ -84,7 +84,7 @@ return (
             <input
               id="login-username"
               type="text"
-              placeholder="artem.b"
+              placeholder="JohnPork"
               autoComplete="username"
               required
               value={username}

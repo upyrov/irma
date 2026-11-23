@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 
+import { buildIssue, nextIssueKey } from "#/components/createIssue/buildIssue"
+import { CreateIssueModal } from "#/components/createIssue/createIssueModal"
+import type { NewIssueValues } from "#/components/createIssue/types"
 import { ProjectHeader } from "#/components/projectHeader"
 import { findProject, guardSection } from "#/lib/projectTemplates"
 import type { TaskType } from "#/components/ui/task-type"
@@ -8,6 +11,9 @@ import {
   backlogEpics,
   backlogIssues,
   backlogSprints,
+  currentUserId,
+  projectMembers,
+  scrumStages,
 } from "#/tempData"
 import type { Epic, Issue } from "#/components/ProjectTemplate/Scrum/backlog/types"
 import { EpicsPanel, type EpicProgress } from "#/components/ProjectTemplate/Scrum/backlog/epicsPanel"
@@ -30,6 +36,7 @@ function RouteComponent() {
   const [search, setSearch] = useState("")
   const [selectedEpicId, setSelectedEpicId] = useState<string | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const epicsById = useMemo(
     () => Object.fromEntries(backlogEpics.map((e) => [e.id, e])) as Record<string, Epic>,
@@ -66,28 +73,25 @@ function RouteComponent() {
     setDraggingId(null)
   }
 
-  const createIssue = ({ type, title }: { type: TaskType; title: string }) => {
-    setIssues((prev) => {
-      const nextNum =
-        Math.max(0, ...prev.map((i) => Number(i.key.split("-")[1]) || 0)) + 1
-      return [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          key: `${projectKey}-${nextNum}`,
-          title,
-          type,
-          priority: "medium",
-          storyPoints: null,
-          assignee: null,
-          epicId: selectedEpicId,
-          stageId: "todo",
-          sprintId: null,
-          done: false,
-        },
-      ]
+  const addIssue = (values: NewIssueValues) =>
+    setIssues((prev) => [
+      ...prev,
+      buildIssue(values, { issues: prev, projectKey, members: projectMembers, stages: scrumStages }),
+    ])
+
+  /** Швидке створення внизу беклогу — лише тип і назва, решта за замовчуванням */
+  const quickCreate = ({ type, title }: { type: TaskType; title: string }) =>
+    addIssue({
+      type,
+      title,
+      description: null,
+      stageId: scrumStages[0].id,
+      priority: "medium",
+      assigneeId: null,
+      epicId: selectedEpicId,
+      sprintId: null,
+      storyPoints: null,
     })
-  }
 
   const dragProps = {
     draggingId,
@@ -103,6 +107,27 @@ function RouteComponent() {
         searchPlaceholder="Пошук задач"
         search={search}
         onSearchChange={setSearch}
+        onCreate={() => setIsCreateOpen(true)}
+      />
+
+      <CreateIssueModal
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        project={{
+          name: project?.name ?? "Проєкт",
+          key: projectKey,
+          color: project?.color ?? "var(--color-primary)",
+          template: project?.template ?? "Scrum",
+        }}
+        nextKey={nextIssueKey(issues, projectKey)}
+        stages={scrumStages}
+        members={projectMembers}
+        currentUserId={currentUserId}
+        epics={backlogEpics}
+        sprints={backlogSprints.filter((s) => s.status !== "closed")}
+        // Якщо зліва вибрано епік — нова задача одразу в ньому
+        defaults={{ epicId: selectedEpicId ?? undefined }}
+        onCreate={addIssue}
       />
 
       <div className="flex flex-wrap items-start gap-6 px-8 py-7">
@@ -143,7 +168,7 @@ function RouteComponent() {
             epicsById={epicsById}
             canDrop={!!draggingIssue && draggingIssue.sprintId !== null}
             onDropIssue={(id) => moveIssue(id, null)}
-            onCreateIssue={createIssue}
+            onCreateIssue={quickCreate}
             {...dragProps}
           />
         </div>

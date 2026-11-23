@@ -1,10 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { authApi } from "../auth"
 import { ApiError } from "../client"
+import { queryKeys } from "../queryKeys"
 
-export const authKeys = {
-  me: ["auth", "me"] as const,
-}
+export const authKeys = queryKeys.auth
 
 /** GET /api/auth/me, але 401 → null (не залогінений — це не помилка) */
 export const fetchMe = async () => {
@@ -16,12 +15,12 @@ export const fetchMe = async () => {
   }
 }
 
-export const meQueryOptions = {
+export const meQueryOptions = queryOptions({
   queryKey: authKeys.me,
   queryFn: fetchMe,
   retry: false,
   staleTime: 5 * 60_000,
-} as const
+})
 
 /** Поточний користувач; `data` — null, якщо не залогінений */
 export const useMe = () => useQuery(meQueryOptions)
@@ -47,8 +46,15 @@ export const useLogout = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: authApi.logout,
-    // Дані попереднього користувача не повинні лишитися в кеші
-    onSettled: () => queryClient.clear(),
+    // Навіть якщо запит упав — локально вважаємо, що вийшли
+    onSettled: () => {
+      // setQueryData сповіщає компоненти на екрані → сайдбар одразу покаже «Гість».
+      // (clear() / removeQueries цього не роблять: показані компоненти лишаються зі старими даними,
+      //  а clear() ще й видаляє саму мутацію — тоді не спрацьовує перехід на /login)
+      queryClient.setQueryData(authKeys.me, null)
+      // Дані попереднього користувача (проєкти, задачі…) не повинні лишитися в кеші
+      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "auth" })
+    },
   })
 }
 

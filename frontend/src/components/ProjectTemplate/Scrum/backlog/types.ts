@@ -36,4 +36,6 @@ export type Issue = {
   stageId: string
   sprintId: string | null
   done: boolean
+  /** ISO-дата створення (для «2 дні тому» на дошці багів) */
+  createdAt?: string
 }
