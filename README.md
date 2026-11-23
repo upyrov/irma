@@ -70,6 +70,16 @@ Vite reads this variable at build time. For the local Vite server, set it in `fr
 
 Live browser integration currently needs code and deployment changes. The frontend requests `/api/auth/me`, while the backend exposes the current user at `/api/users/me`. Ports 3000 and 5050 are different origins, and the backend currently has no CORS policy. A live setup also needs to account for the Secure authentication cookie and the frontend's credentialed requests. Use the API reference or an HTTP client for backend development.
 
+## Production database migrations
+
+Run a one-shot migration job before rolling out each backend release. Use the same immutable backend image tag for the job and the API rollout. Inject `ConnectionStrings__DefaultConnection` from your deployment secret store with a PostgreSQL role that can apply schema changes. The production database must already exist and be reachable from the job.
+
+```sh
+docker run --rm --env ConnectionStrings__DefaultConnection "$IRMA_BACKEND_IMAGE" --migrate
+```
+
+Run the container on a network that can reach the production database. Continue the rollout only after the job exits successfully. EF Core applies pending migrations using its migration history and database lock, so the job can be rerun after success. Run the API containers with their runtime database credentials and the default image command.
+
 ## Development
 
 - [`frontend/src/routes/`](frontend/src/routes/) contains file-based routes for authentication, teams, and project views. [`frontend/src/api/`](frontend/src/api/) contains the HTTP client and TanStack Query hooks.

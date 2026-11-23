@@ -11,6 +11,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
+if (args is ["--migrate"])
+{
+    var migrationConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+    if (string.IsNullOrWhiteSpace(migrationConnection))
+    {
+        throw new InvalidOperationException("Set ConnectionStrings__DefaultConnection for the migration job.");
+    }
+
+    var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(migrationConnection).Options;
+    await using var db = new AppDbContext(options);
+    Console.WriteLine("Applying pending database migrations.");
+    await db.Database.MigrateAsync();
+    Console.WriteLine("Database migrations completed.");
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()

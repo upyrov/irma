@@ -8,6 +8,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Irma.WebAPI/Irma.WebAPI.csproj", "Irma.WebAPI/"]
+COPY ["Irma.BLL/Irma.BLL.csproj", "Irma.BLL/"]
+COPY ["Irma.DAL/Irma.DAL.csproj", "Irma.DAL/"]
 RUN dotnet restore "Irma.WebAPI/Irma.WebAPI.csproj"
 COPY . .
 WORKDIR "/src/Irma.WebAPI"
