@@ -10,33 +10,136 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteRouteImport } from './routes/_app/route'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as TeamsRouteImport } from './routes/teams'
+import { Route as UiKitRouteImport } from './routes/ui-kit'
+import { Route as AppProjectsProjectIdBacklogRouteImport } from './routes/_app/projects/$projectId/backlog'
+import { Route as AppProjectsProjectIdBoardRouteImport } from './routes/_app/projects/$projectId/board'
+import { Route as AppProjectsProjectIdSettingsRouteImport } from './routes/_app/projects/$projectId/settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsRoute = TeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UiKitRoute = UiKitRouteImport.update({
+  id: '/ui-kit',
+  path: '/ui-kit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppProjectsProjectIdBacklogRoute =
+  AppProjectsProjectIdBacklogRouteImport.update({
+    id: '/projects/$projectId/backlog',
+    path: '/projects/$projectId/backlog',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
+const AppProjectsProjectIdBoardRoute =
+  AppProjectsProjectIdBoardRouteImport.update({
+    id: '/projects/$projectId/board',
+    path: '/projects/$projectId/board',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
+const AppProjectsProjectIdSettingsRoute =
+  AppProjectsProjectIdSettingsRouteImport.update({
+    id: '/projects/$projectId/settings',
+    path: '/projects/$projectId/settings',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/teams': typeof TeamsRoute
+  '/ui-kit': typeof UiKitRoute
+  '/projects/$projectId/backlog': typeof AppProjectsProjectIdBacklogRoute
+  '/projects/$projectId/board': typeof AppProjectsProjectIdBoardRoute
+  '/projects/$projectId/settings': typeof AppProjectsProjectIdSettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/teams': typeof TeamsRoute
+  '/ui-kit': typeof UiKitRoute
+  '/projects/$projectId/backlog': typeof AppProjectsProjectIdBacklogRoute
+  '/projects/$projectId/board': typeof AppProjectsProjectIdBoardRoute
+  '/projects/$projectId/settings': typeof AppProjectsProjectIdSettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/teams': typeof TeamsRoute
+  '/ui-kit': typeof UiKitRoute
+  '/_app/projects/$projectId/backlog': typeof AppProjectsProjectIdBacklogRoute
+  '/_app/projects/$projectId/board': typeof AppProjectsProjectIdBoardRoute
+  '/_app/projects/$projectId/settings': typeof AppProjectsProjectIdSettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/teams'
+    | '/ui-kit'
+    | '/projects/$projectId/backlog'
+    | '/projects/$projectId/board'
+    | '/projects/$projectId/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/teams'
+    | '/ui-kit'
+    | '/projects/$projectId/backlog'
+    | '/projects/$projectId/board'
+    | '/projects/$projectId/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/register'
+    | '/teams'
+    | '/ui-kit'
+    | '/_app/projects/$projectId/backlog'
+    | '/_app/projects/$projectId/board'
+    | '/_app/projects/$projectId/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRouteRoute: typeof AppRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  TeamsRoute: typeof TeamsRoute
+  UiKitRoute: typeof UiKitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +151,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams': {
+      id: '/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof TeamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ui-kit': {
+      id: '/ui-kit'
+      path: '/ui-kit'
+      fullPath: '/ui-kit'
+      preLoaderRoute: typeof UiKitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/projects/$projectId/backlog': {
+      id: '/_app/projects/$projectId/backlog'
+      path: '/projects/$projectId/backlog'
+      fullPath: '/projects/$projectId/backlog'
+      preLoaderRoute: typeof AppProjectsProjectIdBacklogRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/projects/$projectId/board': {
+      id: '/_app/projects/$projectId/board'
+      path: '/projects/$projectId/board'
+      fullPath: '/projects/$projectId/board'
+      preLoaderRoute: typeof AppProjectsProjectIdBoardRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/projects/$projectId/settings': {
+      id: '/_app/projects/$projectId/settings'
+      path: '/projects/$projectId/settings'
+      fullPath: '/projects/$projectId/settings'
+      preLoaderRoute: typeof AppProjectsProjectIdSettingsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
+interface AppRouteRouteChildren {
+  AppProjectsProjectIdBacklogRoute: typeof AppProjectsProjectIdBacklogRoute
+  AppProjectsProjectIdBoardRoute: typeof AppProjectsProjectIdBoardRoute
+  AppProjectsProjectIdSettingsRoute: typeof AppProjectsProjectIdSettingsRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppProjectsProjectIdBacklogRoute: AppProjectsProjectIdBacklogRoute,
+  AppProjectsProjectIdBoardRoute: AppProjectsProjectIdBoardRoute,
+  AppProjectsProjectIdSettingsRoute: AppProjectsProjectIdSettingsRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRouteRoute: AppRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  TeamsRoute: TeamsRoute,
+  UiKitRoute: UiKitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
