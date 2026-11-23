@@ -2,13 +2,18 @@ import { SidebarShell } from '#/layout/sidebar/sidebar'
 import { Logo } from '#/layout/sidebar/componennts/logo';
 import { HomeProjectsNav } from '#/layout/sidebar/componennts/homeProjetcsNav';
 import { createFileRoute } from '@tanstack/react-router'
+import { requireAuth } from '#/api/guards';
 import { UserMenu } from '#/layout/sidebar/componennts/userMenu';
 import { ProjectList } from '#/layout/sidebar/componennts/projectList';
 import { HomeProjectsTeamList } from '#/layout/sidebar/componennts/homeProjectsTeamList';
 import { useState } from 'react';
 import { NewProject } from '#/components/newProject';
 
-export const Route = createFileRoute('/')({ component: Home })
+export const Route = createFileRoute('/')({
+  ssr: false,
+  beforeLoad: requireAuth,
+  component: Home,
+})
 
 
 function Home() {
@@ -47,7 +52,7 @@ function Home() {
         </button>
       </div>
     </div>
-      <ProjectList />
+      <ProjectList onCreate={() => setIsOpenNewProject(true)} />
   </div>
 </div>
     ) : (

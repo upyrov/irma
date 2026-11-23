@@ -48,7 +48,7 @@ export type ProjectDto = {
   description: string | null
   template: ProjectTemplate
   teamId: Guid
-  members: UserDto[]
+  members: ProjectMemberDto[]
 }
 
 export type ProjectMemberDto = {
@@ -58,8 +58,7 @@ export type ProjectMemberDto = {
 }
 
 export type AddProjectMemberDto = {
-  /** Id користувача */
-  id: Guid
+  userId: Guid
   role: ProjectRole
 }
 
@@ -143,15 +142,19 @@ export type IssueDto = {
   createdAt: DateTimeOffset
 }
 
-/** Полегшена картка для дошки */
+/** Полегшена картка: дошка, беклог, епіки (без опису) */
 export type BoardIssueDto = {
   id: Guid
   issueKey: string
   title: string
+  issueType: IssueType
   priority: Priority
   storyPoints: number | null
   stageId: Guid
+  sprintId: Guid | null
+  epicId: Guid | null
   assignee: UserDto | null
+  createdAt: DateTimeOffset
 }
 
 export type CommentCreateDto = {
@@ -175,3 +178,6 @@ export type ProblemDetails = {
   detail?: string
   errors?: Record<string, string[]>
 }
+
+/** GET /api/projects/{id}/my-role */
+export type MyRoleDto = { role: ProjectRole | null }

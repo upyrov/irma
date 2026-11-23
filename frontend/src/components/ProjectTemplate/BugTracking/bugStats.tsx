@@ -1,12 +1,15 @@
 import { cn } from "cn"
-import type { Issue } from "#/components/ProjectTemplate/Scrum/backlog/types"
-import { FIXED_STAGES } from "./bugConfig"
+import type { Issue, Stage } from "#/components/ProjectTemplate/Scrum/backlog/types"
+import { FIXED_STAGE_KEYS } from "./bugConfig"
 
-type Props = { issues: Issue[] }
+type Props = { issues: Issue[]; stages: Stage[] }
 
 /** Лічильники над дошкою — рахуються з усіх багів, без урахування фільтрів */
-export const BugStats = ({ issues }: Props) => {
-  const open = issues.filter((i) => !FIXED_STAGES.includes(i.stageId))
+export const BugStats = ({ issues, stages }: Props) => {
+  const fixedIds = new Set(
+    stages.filter((s) => FIXED_STAGE_KEYS.includes(s.key) || s.isDone).map((s) => s.id)
+  )
+  const open = issues.filter((i) => !fixedIds.has(i.stageId))
   const stats = [
     { label: "Відкритих", value: open.length, className: "text-ink" },
     {

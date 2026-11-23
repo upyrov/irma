@@ -56,7 +56,7 @@ public class ProjectService : IProjectService
         {
             ProjectTemplate.Scrum => new[] { "To Do", "In Progress", "Done" },
             ProjectTemplate.Kanban => new[] { "Backlog", "Selected", "In Progress", "Done" },
-            ProjectTemplate.BugTracking => new[] { "New", "In Progress", "Resolved", "Closed" },
+            ProjectTemplate.BugTracking => new[] { "New", "Triage", "In Progress", "Fixed", "Verified" },
             _ => throw new ArgumentOutOfRangeException(nameof(dto.Template), dto.Template, "Unsupported project template.")
         };
 
@@ -154,11 +154,25 @@ public class ProjectService : IProjectService
             throw new InvalidOperationException("Target user was not found.");
         }
 
-        var isAlreadyMember = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == dto.UserId, cancellationToken);
-        if (isAlreadyMember)
+        // Той самий ендпоінт змінює роль наявного учасника (RBAC зі сторінки налаштувань)
+        var existingMember = await _dbContext.ProjectMembers
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == dto.UserId, cancellationToken);
+        if (existingMember is not null)
         {
-            throw new InvalidOperationException("User is already a member of this project.");
+            if (existingMember.Role == ProjectRole.Owner)
+            {
+                throw new ArgumentException("Owner role cannot be changed.");
+            }
+
+            existingMember.Role = dto.Role;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return new ProjectMemberDto
+            {
+                UserId = targetUser.Id,
+                Username = targetUser.Username,
+                Role = existingMember.Role
+            };
         }
 
         var projectMember = new ProjectMember
@@ -235,6 +249,10 @@ public class ProjectService : IProjectService
             .Where(i => i.ProjectId == projectId)
             .Select(i => new BoardIssueDto
             {
+                IssueType = i.IssueType,
+                SprintId = i.SprintId,
+                EpicId = i.EpicId,
+                CreatedAt = i.CreatedAt,
                 Id = i.Id,
                 IssueKey = i.IssueKey,
                 Title = i.Title,
@@ -265,6 +283,10 @@ public class ProjectService : IProjectService
             .Where(i => i.ProjectId == projectId && i.IssueType == IssueType.Epic)
             .Select(i => new BoardIssueDto
             {
+                IssueType = i.IssueType,
+                SprintId = i.SprintId,
+                EpicId = i.EpicId,
+                CreatedAt = i.CreatedAt,
                 Id = i.Id,
                 IssueKey = i.IssueKey,
                 Title = i.Title,

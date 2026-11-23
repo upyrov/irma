@@ -29,18 +29,20 @@ const mock = {
     return toTeamDto(team)
   },
 
-  async searchUsers(search: string): Promise<UserDto[]> {
+  async searchUsers(teamId: Guid, search: string): Promise<UserDto[]> {
     await delay(150)
     requireUser()
     const q = search.trim().toLowerCase()
     if (!q) return []
+    const team = db.teams.find((t) => t.id === teamId)
     return db.users
+      .filter((u) => !team?.memberIds.includes(u.id))
       .filter((u) => u.username.toLowerCase().includes(q))
       .slice(0, 20)
       .map((u) => toUserDto(u) as UserDto)
   },
 
-  async addMember(teamId: Guid, userId: Guid): Promise<TeamDto> {
+  async addMember(teamId: Guid, userId: Guid): Promise<void> {
     await delay()
     const me = requireUser()
     const team = findOr404(db.teams, (t) => t.id === teamId, "Команду")
@@ -48,7 +50,6 @@ const mock = {
     findOr404(db.users, (u) => u.id === userId, "Користувача")
     if (team.memberIds.includes(userId)) fail(409, "Користувач уже в команді")
     team.memberIds.push(userId)
-    return toTeamDto(team)
   },
 }
 
@@ -60,15 +61,15 @@ export const teamsApi = {
   create: (dto: TeamCreateDto) =>
     USE_MOCKS ? mock.create(dto) : http.post<TeamDto>("/api/teams", dto),
 
-  /** GET /api/teams/search-users?search= — пошук користувачів за іменем */
-  searchUsers: (search: string) =>
+  /** GET /api/teams/{id}/search-users?query= — кого можна додати в команду (ще не учасники) */
+  searchUsers: (teamId: Guid, search: string) =>
     USE_MOCKS
-      ? mock.searchUsers(search)
-      : http.get<UserDto[]>("/api/teams/search-users", { query: { search } }),
+      ? mock.searchUsers(teamId, search)
+      : http.get<UserDto[]>(`/api/teams/${teamId}/search-users`, { query: { query: search } }),
 
   /** POST /api/teams/{id}/members/{userId} — додати користувача в команду */
   addMember: (teamId: Guid, userId: Guid) =>
     USE_MOCKS
       ? mock.addMember(teamId, userId)
-      : http.post<TeamDto>(`/api/teams/${teamId}/members/${userId}`),
+      : http.post<void>(`/api/teams/${teamId}/members/${userId}`),
 }

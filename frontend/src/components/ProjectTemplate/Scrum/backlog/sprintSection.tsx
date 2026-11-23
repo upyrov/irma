@@ -61,7 +61,14 @@ export const SprintSection = ({
         >
           <Pencil className="size-4" />
         </Button>
-        <Button size="xs" onClick={onStart} className="px-3.5">
+        <Button
+          size="xs"
+          onClick={onStart}
+          disabled={!onStart}
+          // У проєкті може бути лише один активний спринт
+          title={onStart ? undefined : "Спершу завершіть активний спринт"}
+          className="px-3.5"
+        >
           <Play className="size-3.5 fill-current" />
           Start Sprint
         </Button>

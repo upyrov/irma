@@ -72,32 +72,39 @@ export const useCreateIssue = (projectId: Guid) => {
 export const useUpdateIssue = (projectId: Guid) => {
   const queryClient = useQueryClient()
   const boardKey = queryKeys.projects.board(projectId)
+  const backlogKey = queryKeys.projects.backlog(projectId)
 
   return useMutation({
     mutationFn: ({ issueId, dto }: { issueId: Guid; dto: IssueUpdateDto }) =>
       issuesApi.update(issueId, dto),
 
     onMutate: async ({ issueId, dto }) => {
-      await queryClient.cancelQueries({ queryKey: boardKey })
-      const previousBoard = queryClient.getQueryData<BoardIssueDto[]>(boardKey)
-      queryClient.setQueryData<BoardIssueDto[]>(boardKey, (cards) =>
-        cards?.map((c) =>
-          c.id === issueId
-            ? {
-                ...c,
-                ...(dto.stageId !== undefined && { stageId: dto.stageId }),
-                ...(dto.title !== undefined && { title: dto.title }),
-                ...(dto.priority !== undefined && { priority: dto.priority }),
-                ...(dto.storyPoints !== undefined && { storyPoints: dto.storyPoints }),
-              }
-            : c
-        )
-      )
-      return { previousBoard }
+      // Дошка і беклог показують ту саму задачу — оновлюємо обидва
+      const keys = [boardKey, backlogKey]
+      await Promise.all(keys.map((queryKey) => queryClient.cancelQueries({ queryKey })))
+      const previous = keys.map((key) => [key, queryClient.getQueryData<BoardIssueDto[]>(key)] as const)
+      const patch = (c: BoardIssueDto): BoardIssueDto =>
+        c.id !== issueId
+          ? c
+          : {
+              ...c,
+              ...(dto.stageId !== undefined && { stageId: dto.stageId }),
+              ...(dto.sprintId !== undefined && { sprintId: dto.sprintId }),
+              ...(dto.epicId !== undefined && { epicId: dto.epicId }),
+              ...(dto.title !== undefined && { title: dto.title }),
+              ...(dto.priority !== undefined && { priority: dto.priority }),
+              ...(dto.storyPoints !== undefined && { storyPoints: dto.storyPoints }),
+            }
+      for (const key of keys) {
+        queryClient.setQueryData<BoardIssueDto[]>(key, (cards) => cards?.map(patch))
+      }
+      return { previous }
     },
 
     onError: (_err, _vars, ctx) => {
-      if (ctx?.previousBoard) queryClient.setQueryData(boardKey, ctx.previousBoard)
+      for (const [key, data] of ctx?.previous ?? []) {
+        if (data) queryClient.setQueryData(key, data)
+      }
     },
 
     onSuccess: (issue: IssueDto) => queryClient.setQueryData(queryKeys.issues.detail(issue.id), issue),

@@ -1,21 +1,28 @@
 import type { ProblemDetails } from "#/types/api"
 
 /**
- * Поки бекенд не готовий — усі функції API працюють із заглушкою в пам'яті (`mock/`).
- * Щоб перейти на справжній бекенд, задай у `.env.local`:
- *   VITE_USE_MOCKS=false
+ * За замовчуванням фронт ходить у справжній бекенд (Irma.WebAPI, профіль http → :5172).
+ * Налаштування — у `.env.local`:
  *   VITE_API_URL=http://localhost:5172
+ *   VITE_USE_MOCKS=true   ← працювати без бекенду, на заглушці в пам'яті (`mock/`)
  */
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== "false"
+export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
 
 const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:5172").replace(/\/$/, "")
+
+/**
+ * Бекенд віддає помилки у двох форматах:
+ *  - ApiExceptionHandler: `{ errorCode, message, statusCode, timestamp }`
+ *  - валідація (FluentValidation / ProblemDetails): `{ title, errors: { Field: [...] } }`
+ */
+type ErrorBody = ProblemDetails & { message?: string; errorCode?: string }
 
 export class ApiError extends Error {
   constructor(
     public status: number,
-    public problem: ProblemDetails = {}
+    public problem: ErrorBody = {}
   ) {
-    super(problem.detail ?? problem.title ?? `HTTP ${status}`)
+    super(problem.message ?? problem.detail ?? problem.title ?? `HTTP ${status}`)
     this.name = "ApiError"
   }
 }

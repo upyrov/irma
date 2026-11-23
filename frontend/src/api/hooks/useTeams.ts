@@ -19,13 +19,13 @@ export const teamsQueryOptions = queryOptions({
 /** GET /api/teams — команди поточного користувача */
 export const useTeams = () => useQuery(teamsQueryOptions)
 
-/** GET /api/teams/search-users — пошук стартує з 2 символів; поки вводиш, лишаються старі результати */
-export const useSearchUsers = (search: string) => {
+/** GET /api/teams/{id}/search-users — пошук стартує з 2 символів; поки вводиш, лишаються старі результати */
+export const useSearchUsers = (teamId: Guid | undefined, search: string) => {
   const q = search.trim()
   return useQuery({
-    queryKey: queryKeys.teams.searchUsers(q),
-    queryFn: () => teamsApi.searchUsers(q),
-    enabled: q.length >= 2,
+    queryKey: queryKeys.teams.searchUsers(teamId ?? "", q),
+    queryFn: () => teamsApi.searchUsers(teamId ?? "", q),
+    enabled: !!teamId && q.length >= 2,
     placeholderData: keepPreviousData,
     staleTime: 30_000,
   })
@@ -48,6 +48,9 @@ export const useAddTeamMember = () => {
   return useMutation({
     mutationFn: ({ teamId, userId }: { teamId: Guid; userId: Guid }) =>
       teamsApi.addMember(teamId, userId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.teams.list }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.teams.list })
+      queryClient.invalidateQueries({ queryKey: ["teams", "search-users"] })
+    },
   })
 }

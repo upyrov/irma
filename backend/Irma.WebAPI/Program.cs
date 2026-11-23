@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using System.Text;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -12,7 +13,10 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Enum'и в JSON — рядками ("Scrum", "High"), а не числами. Числа на вході теж приймаються.
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
@@ -67,6 +71,16 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+// Фронтенд (Vite, :3000) ходить на API з іншого порту і з cookie — потрібен CORS з credentials
+var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+    ?? ["http://localhost:3000"];
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins(corsOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -79,7 +93,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler();
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 

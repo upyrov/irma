@@ -280,6 +280,21 @@ public class IssueService : IIssueService
             issue.EpicId = dto.EpicId.Value;
         }
 
+        if (dto.ClearSprint)
+        {
+            issue.SprintId = null;
+        }
+
+        if (dto.ClearEpic)
+        {
+            issue.EpicId = null;
+        }
+
+        if (dto.ClearAssignee)
+        {
+            issue.AssigneeId = null;
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         UserDto? assignee = null;

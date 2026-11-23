@@ -30,7 +30,7 @@ export const BugColumn = ({
   onOpen,
 }: Props) => {
   const { isOver, handlers } = useDropTarget(canDrop, onDropIssue)
-  const meta = bugStageMeta[stage.id]
+  const meta = bugStageMeta[stage.key]
 
   return (
     <section

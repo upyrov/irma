@@ -52,6 +52,22 @@ const validateRefs = (
   }
 }
 
+/**
+ * На бекенді null у IssueUpdateDto означає «не змінювати», а очищення — окремі прапорці
+ * ClearSprint / ClearEpic / ClearAssignee. Фронт пише null — перекладаємо.
+ */
+const toServerUpdate = (dto: IssueUpdateDto) => {
+  const { sprintId, epicId, assigneeId, ...rest } = dto
+  return {
+    ...rest,
+    ...(sprintId === null ? { clearSprint: true } : sprintId !== undefined && { sprintId }),
+    ...(epicId === null ? { clearEpic: true } : epicId !== undefined && { epicId }),
+    ...(assigneeId === null
+      ? { clearAssignee: true }
+      : assigneeId !== undefined && { assigneeId }),
+  }
+}
+
 const mock = {
   async stages(projectId: Guid): Promise<StageDto[]> {
     await delay()
@@ -77,9 +93,13 @@ const mock = {
         id: i.id,
         issueKey: i.issueKey,
         title: i.title,
+        issueType: i.issueType,
         priority: i.priority,
         storyPoints: i.storyPoints,
         stageId: i.stageId,
+        sprintId: i.sprintId,
+        epicId: i.epicId,
+        createdAt: i.createdAt,
         assignee: toUserDto(db.users.find((u) => u.id === i.assigneeId)),
       }))
   },
@@ -176,7 +196,9 @@ export const issuesApi = {
 
   /** PUT /api/issues/{id} — оновлення (drag'n'drop, story points, епік, спринт) */
   update: (issueId: Guid, dto: IssueUpdateDto) =>
-    USE_MOCKS ? mock.update(issueId, dto) : http.put<IssueDto>(`/api/issues/${issueId}`, dto),
+    USE_MOCKS
+      ? mock.update(issueId, dto)
+      : http.put<IssueDto>(`/api/issues/${issueId}`, toServerUpdate(dto)),
 
   /** GET /api/issues/{id}/comments — історія коментарів */
   comments: (issueId: Guid) =>

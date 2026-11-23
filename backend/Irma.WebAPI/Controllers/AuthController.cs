@@ -40,7 +40,8 @@ public class AuthController : ControllerBase
         Response.Cookies.Delete(AuthCookieName, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
+            // Локально API працює по http — Secure-cookie браузер (Safari) тоді не збереже
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,
             Path = "/"
         });
@@ -53,7 +54,8 @@ public class AuthController : ControllerBase
         Response.Cookies.Append(AuthCookieName, token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
+            // Локально API працює по http — Secure-cookie браузер (Safari) тоді не збереже
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,
             Expires = DateTimeOffset.UtcNow.AddDays(7),
             Path = "/"

@@ -1,5 +1,5 @@
 // 2.3 Scrum: спринти та беклог
-import type { Guid, IssueDto, SprintCreateDto, SprintDto } from "#/types/api"
+import type { BoardIssueDto, Guid, SprintCreateDto, SprintDto } from "#/types/api"
 import { http, USE_MOCKS } from "./client"
 import {
   ALL_ROLES,
@@ -84,7 +84,7 @@ const mock = {
     return clone(sprint)
   },
 
-  async backlog(projectId: Guid): Promise<IssueDto[]> {
+  async backlog(projectId: Guid): Promise<BoardIssueDto[]> {
     await delay()
     requireProjectRole(projectId, ALL_ROLES)
     const activeIds = new Set(
@@ -117,13 +117,15 @@ export const sprintsApi = {
 
   /** PUT /api/sprints/{id}/start — запуск спринту (у проєкті лише один активний) */
   start: (sprintId: Guid) =>
-    USE_MOCKS ? mock.start(sprintId) : http.put<SprintDto>(`/api/sprints/${sprintId}/start`),
+    USE_MOCKS
+      ? mock.start(sprintId).then(() => undefined)
+      : http.put<void>(`/api/sprints/${sprintId}/start`),
 
   /** PUT /api/sprints/{id}/complete — завершення; незавершені задачі йдуть у беклог */
   complete: (sprintId: Guid) =>
     USE_MOCKS
-      ? mock.complete(sprintId)
-      : http.put<SprintDto>(`/api/sprints/${sprintId}/complete`),
+      ? mock.complete(sprintId).then(() => undefined)
+      : http.put<void>(`/api/sprints/${sprintId}/complete`),
 
   /**
    * GET /api/projects/{id}/backlog — задачі без активного спринту.
@@ -132,5 +134,5 @@ export const sprintsApi = {
   backlog: (projectId: Guid) =>
     USE_MOCKS
       ? mock.backlog(projectId)
-      : http.get<IssueDto[]>(`/api/projects/${projectId}/backlog`),
+      : http.get<BoardIssueDto[]>(`/api/projects/${projectId}/backlog`),
 }

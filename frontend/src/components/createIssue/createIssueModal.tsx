@@ -17,7 +17,7 @@ import {
 } from "#/components/ui/select"
 import type { TaskType } from "#/components/ui/task-type"
 import { Textarea } from "#/components/ui/textarea"
-import type { Project } from "#/tempData"
+import type { Project } from "#/api/adapters"
 import { issueFormConfig } from "./formConfig"
 import { PriorityPicker } from "./priorityPicker"
 import { StoryPointsPicker } from "./storyPointsPicker"

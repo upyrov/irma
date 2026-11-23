@@ -76,6 +76,22 @@ public class SprintService : ISprintService
         }
 
         await EnsureProjectAccessAsync(sprint.ProjectId, currentUserId, cancellationToken);
+
+        if (sprint.Status != SprintStatus.Planned)
+        {
+            throw new InvalidOperationException("Only a planned sprint can be started.");
+        }
+
+        var hasActiveSprint = await _dbContext.Sprints
+            .AnyAsync(s => s.ProjectId == sprint.ProjectId && s.Status == SprintStatus.Active, cancellationToken);
+        if (hasActiveSprint)
+        {
+            throw new InvalidOperationException("The project already has an active sprint.");
+        }
+
+        // Якщо дати не задали при створенні — стартуємо сьогодні на 2 тижні
+        sprint.StartDate ??= DateTimeOffset.UtcNow;
+        sprint.EndDate ??= sprint.StartDate.Value.AddDays(14);
         sprint.Status = SprintStatus.Active;
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -115,9 +131,17 @@ public class SprintService : ISprintService
         await EnsureProjectAccessAsync(projectId, currentUserId, cancellationToken);
 
         return await _dbContext.Issues
-            .Where(i => i.ProjectId == projectId && i.SprintId == null)
+            // Беклог = задачі без спринту + задачі запланованих спринтів (фронтенд групує за SprintId).
+            // Епіки сюди не входять — для них є /epics.
+            .Where(i => i.ProjectId == projectId
+                && i.IssueType != IssueType.Epic
+                && (i.SprintId == null || i.Sprint!.Status == SprintStatus.Planned))
             .Select(i => new BoardIssueDto
             {
+                IssueType = i.IssueType,
+                SprintId = i.SprintId,
+                EpicId = i.EpicId,
+                CreatedAt = i.CreatedAt,
                 Id = i.Id,
                 IssueKey = i.IssueKey,
                 Title = i.Title,

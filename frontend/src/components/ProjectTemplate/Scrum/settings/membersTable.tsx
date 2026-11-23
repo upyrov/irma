@@ -17,7 +17,8 @@ type RowProps = {
   member: ProjectMember
   taskCount: number
   onRoleChange: (role: ProjectRole) => void
-  onRemove: () => void
+  /** Немає — видалення недоступне (у API поки немає такого ендпоінта) */
+  onRemove?: () => void
 }
 
 const MemberRow = ({ member, taskCount, onRoleChange, onRemove }: RowProps) => {
@@ -50,7 +51,7 @@ const MemberRow = ({ member, taskCount, onRoleChange, onRemove }: RowProps) => {
         )}
       </TableCell>
       <TableCell className="text-right">
-        {!isOwner && (
+        {!isOwner && onRemove && (
           <Button
             variant="ghost"
             size="icon"
@@ -70,7 +71,7 @@ type Props = {
   members: ProjectMember[]
   taskCounts: Record<string, number>
   onRoleChange: (memberId: string, role: ProjectRole) => void
-  onRemove: (memberId: string) => void
+  onRemove?: (memberId: string) => void
 }
 
 export const MembersTable = ({
@@ -102,7 +103,7 @@ export const MembersTable = ({
               member={m}
               taskCount={taskCounts[m.id] ?? 0}
               onRoleChange={(role) => onRoleChange(m.id, role)}
-              onRemove={() => onRemove(m.id)}
+              onRemove={onRemove && (() => onRemove(m.id))}
             />
           ))}
         </TableBody>

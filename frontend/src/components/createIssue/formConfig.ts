@@ -1,5 +1,5 @@
 import type { TaskType } from "#/components/ui/task-type"
-import type { Project } from "#/tempData"
+import type { Project } from "#/api/adapters"
 
 export type IssueFormConfig = {
   title: string

@@ -1,13 +1,13 @@
 // 2.2 Проєкти, учасники, ролі, епіки
 import type {
   AddProjectMemberDto,
+  BoardIssueDto,
   Guid,
-  IssueDto,
+  MyRoleDto,
   ProjectCreateDto,
   ProjectDto,
   ProjectMemberDto,
   ProjectRole,
-  UserDto,
 } from "#/types/api"
 import { http, USE_MOCKS } from "./client"
 import {
@@ -24,8 +24,14 @@ import {
   requireProjectRole,
   requireUser,
   toIssueDto,
-  toUserDto,
 } from "./mock/db"
+
+const toMemberDtos = (p: MockProject): ProjectMemberDto[] =>
+  p.members.map((m) => ({
+    userId: m.userId,
+    username: db.users.find((u) => u.id === m.userId)?.username ?? "—",
+    role: m.role,
+  }))
 
 const toProjectDto = (p: MockProject): ProjectDto =>
   clone({
@@ -34,17 +40,8 @@ const toProjectDto = (p: MockProject): ProjectDto =>
     description: p.description,
     template: p.template,
     teamId: p.teamId,
-    members: p.members
-      .map((m) => toUserDto(db.users.find((u) => u.id === m.userId)))
-      .filter((u): u is UserDto => u !== null),
+    members: toMemberDtos(p),
   })
-
-const toMemberDtos = (p: MockProject): ProjectMemberDto[] =>
-  p.members.map((m) => ({
-    userId: m.userId,
-    username: db.users.find((u) => u.id === m.userId)?.username ?? "—",
-    role: m.role,
-  }))
 
 /** Ключ задач з назви проєкту: «Мобільний клієнт» → «МК», «Jira-аналог» → «JA» */
 const makeKey = (name: string) => {
@@ -97,25 +94,25 @@ const mock = {
     return toMemberDtos(project)
   },
 
-  async addMember(projectId: Guid, dto: AddProjectMemberDto): Promise<ProjectMemberDto[]> {
+  async addMember(projectId: Guid, dto: AddProjectMemberDto): Promise<ProjectMemberDto> {
     await delay()
     const { project } = requireProjectRole(projectId, MANAGERS)
     if (dto.role === "Owner") fail(400, "Роль Owner призначити не можна")
     const team = db.teams.find((t) => t.id === project.teamId)
-    if (!team?.memberIds.includes(dto.id)) fail(400, "Користувач не з команди проєкту")
+    if (!team?.memberIds.includes(dto.userId)) fail(400, "Користувач не з команди проєкту")
 
-    const existing = project.members.find((m) => m.userId === dto.id)
+    const existing = project.members.find((m) => m.userId === dto.userId)
     if (existing) {
       // Той самий ендпоінт керує ролями (RBAC): існуючому учаснику міняємо роль
       if (existing.role === "Owner") fail(400, "Роль Owner змінити не можна")
       existing.role = dto.role
     } else {
-      project.members.push({ userId: dto.id, role: dto.role })
+      project.members.push({ userId: dto.userId, role: dto.role })
     }
-    return toMemberDtos(project)
+    return toMemberDtos(project).find((m) => m.userId === dto.userId) as ProjectMemberDto
   },
 
-  async epics(projectId: Guid): Promise<IssueDto[]> {
+  async epics(projectId: Guid): Promise<BoardIssueDto[]> {
     await delay()
     requireProjectRole(projectId, ALL_ROLES)
     return db.issues
@@ -123,9 +120,9 @@ const mock = {
       .map(toIssueDto)
   },
 
-  async myRole(projectId: Guid): Promise<ProjectRole> {
+  async myRole(projectId: Guid): Promise<MyRoleDto> {
     await delay(100)
-    return requireProjectRole(projectId, ALL_ROLES).role
+    return { role: requireProjectRole(projectId, ALL_ROLES).role }
   },
 }
 
@@ -143,22 +140,22 @@ export const projectsApi = {
       ? mock.members(projectId)
       : http.get<ProjectMemberDto[]>(`/api/projects/${projectId}/members`),
 
-  /**
-   * POST /api/projects/{id}/members — додати учасника або змінити роль (RBAC).
-   * ⚠️ Що саме повертає бекенд, не визначено — заглушка віддає оновлений список учасників.
-   */
+  /** POST /api/projects/{id}/members — додати учасника (з команди проєкту) з роллю; повертає його */
   addMember: (projectId: Guid, dto: AddProjectMemberDto) =>
     USE_MOCKS
       ? mock.addMember(projectId, dto)
-      : http.post<ProjectMemberDto[]>(`/api/projects/${projectId}/members`, dto),
+      : http.post<ProjectMemberDto>(`/api/projects/${projectId}/members`, dto),
 
   /** GET /api/projects/{id}/epics — усі епіки проєкту */
   epics: (projectId: Guid) =>
-    USE_MOCKS ? mock.epics(projectId) : http.get<IssueDto[]>(`/api/projects/${projectId}/epics`),
+    USE_MOCKS
+      ? mock.epics(projectId)
+      : http.get<BoardIssueDto[]>(`/api/projects/${projectId}/epics`),
 
   /** GET /api/projects/{id}/my-role — роль поточного користувача в проєкті */
-  myRole: (projectId: Guid) =>
-    USE_MOCKS
+  myRole: (projectId: Guid): Promise<ProjectRole | null> =>
+    (USE_MOCKS
       ? mock.myRole(projectId)
-      : http.get<ProjectRole>(`/api/projects/${projectId}/my-role`),
+      : http.get<MyRoleDto>(`/api/projects/${projectId}/my-role`)
+    ).then((r) => r.role),
 }

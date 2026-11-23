@@ -11,7 +11,7 @@ export const queryKeys = {
   },
   teams: {
     list: ["teams", "list"] as const,
-    searchUsers: (search: string) => ["teams", "search-users", search] as const,
+    searchUsers: (teamId: Guid, search: string) => ["teams", "search-users", teamId, search] as const,
   },
   projects: {
     list: ["projects", "list"] as const,

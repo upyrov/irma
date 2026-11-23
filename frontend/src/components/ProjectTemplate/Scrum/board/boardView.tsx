@@ -1,17 +1,13 @@
 import { useMemo, useState } from "react"
-import type { Epic, Issue, Sprint, Stage } from "#/components/ProjectTemplate/Scrum/backlog/types"
-import { buildIssue, nextIssueKey } from "#/components/createIssue/buildIssue"
+import type { Project } from "#/api/adapters"
+import type { ProjectView } from "#/api/hooks/useProjectView"
+import type { Epic, Issue, Sprint } from "#/components/ProjectTemplate/Scrum/backlog/types"
+import { nextIssueKey } from "#/components/createIssue/buildIssue"
 import { CreateIssueModal } from "#/components/createIssue/createIssueModal"
-import type { NewIssueDefaults, NewIssueValues } from "#/components/createIssue/types"
+import type { NewIssueDefaults } from "#/components/createIssue/types"
+import { IssueDetailModal } from "#/components/issueDetail/issueDetailModal"
+import { ErrorBanner } from "#/components/ProjectTemplate/pageState"
 import { ProjectHeader } from "#/components/projectHeader"
-import {
-  backlogEpics,
-  backlogIssues,
-  backlogSprints,
-  currentUserId,
-  projectMembers,
-  type Project,
-} from "#/tempData"
 import { BoardColumn } from "./boardColumn"
 import { ALL, type BoardFilterState, BoardFilters } from "./boardFilters"
 import { BoardTitle } from "./boardTitle"
@@ -24,40 +20,35 @@ const initialFilters: BoardFilterState = {
 }
 
 type Props = {
+  view: ProjectView
   project: Project
-  stages: Stage[]
   /** Активний спринт (Scrum) — показуються лише його задачі; null — усі задачі (Kanban) */
   sprint: Sprint | null
   pageLabel: string
 }
 
 /** Спільна дошка для шаблонів: шапка, заголовок, фільтри, колонки з drag'n'drop */
-export const BoardView = ({ project, stages, sprint, pageLabel }: Props) => {
-  const [issues, setIssues] = useState<Issue[]>(backlogIssues)
+export const BoardView = ({ view, project, sprint, pageLabel }: Props) => {
+  const { issues, stages, members, epics, sprints, currentUserId } = view
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState(initialFilters)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   // null — модалка закрита; інакше — з якими значеннями її відкрили
   const [createDefaults, setCreateDefaults] = useState<NewIssueDefaults | null>(null)
+  const [openIssueId, setOpenIssueId] = useState<string | null>(null)
 
   // Scrum: за замовчуванням — у поточний спринт, щоб задача одразу зʼявилась на дошці
   const openCreate = (stageId?: string) =>
     setCreateDefaults({ stageId, sprintId: sprint?.id })
 
-  const addIssue = (values: NewIssueValues) =>
-    setIssues((prev) => [
-      ...prev,
-      buildIssue(values, { issues: prev, projectKey: project.key, members: projectMembers, stages }),
-    ])
-
   const epicsById = useMemo(
-    () => Object.fromEntries(backlogEpics.map((e) => [e.id, e])) as Record<string, Epic>,
-    []
+    () => Object.fromEntries(epics.map((e) => [e.id, e])) as Record<string, Epic>,
+    [epics]
   )
 
   /** Колонка задачі; якщо такої стадії на дошці немає — перша колонка */
   const stageOf = (issue: Issue) =>
-    stages.some((s) => s.id === issue.stageId) ? issue.stageId : stages[0].id
+    stages.some((s) => s.id === issue.stageId) ? issue.stageId : stages[0]?.id
 
   const visibleIssues = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -75,17 +66,16 @@ export const BoardView = ({ project, stages, sprint, pageLabel }: Props) => {
         !q || i.title.toLowerCase().includes(q) || i.key.toLowerCase().includes(q)
       )
     })
-  }, [issues, search, filters, sprint])
+  }, [issues, search, filters, sprint, currentUserId])
 
   const draggingIssue = issues.find((i) => i.id === draggingId)
 
   const moveIssue = (issueId: string, stageId: string) => {
-    const done = stages.find((s) => s.id === stageId)?.isDone ?? false
-    setIssues((prev) =>
-      prev.map((i) => (i.id === issueId ? { ...i, stageId, done } : i))
-    )
+    view.moveToStage(issueId, stageId)
     setDraggingId(null)
   }
+
+  const completeSprint = () => sprint && view.completeSprint.mutate(sprint.id)
 
   return (
     <div className="flex min-w-0 flex-col">
@@ -98,27 +88,36 @@ export const BoardView = ({ project, stages, sprint, pageLabel }: Props) => {
         onCreate={() => openCreate()}
       />
 
+      <ErrorBanner error={view.error} />
+
       <CreateIssueModal
         open={createDefaults !== null}
         onOpenChange={(open) => !open && setCreateDefaults(null)}
         project={project}
         nextKey={nextIssueKey(issues, project.key)}
         stages={stages}
-        members={projectMembers}
+        members={members}
         currentUserId={currentUserId}
-        epics={backlogEpics}
+        epics={epics}
         // Kanban без спринтів — поле «Спринт» не показуємо
-        sprints={sprint ? backlogSprints.filter((s) => s.status !== "closed") : undefined}
+        sprints={sprint ? sprints.filter((s) => s.status !== "closed") : undefined}
         defaults={createDefaults ?? undefined}
-        onCreate={addIssue}
+        onCreate={view.createIssue}
+      />
+
+      <IssueDetailModal
+        issueId={openIssueId}
+        onClose={() => setOpenIssueId(null)}
+        view={view}
+        project={project}
       />
 
       <div className="flex min-w-0 flex-col gap-[18px] px-8 py-6">
-        <BoardTitle sprint={sprint} />
+        <BoardTitle sprint={sprint} onCompleteSprint={completeSprint} />
 
         <BoardFilters
-          members={projectMembers}
-          epics={backlogEpics}
+          members={members}
+          epics={epics}
           value={filters}
           onChange={setFilters}
         />
@@ -137,6 +136,7 @@ export const BoardView = ({ project, stages, sprint, pageLabel }: Props) => {
                 onDragStart={setDraggingId}
                 onDragEnd={() => setDraggingId(null)}
                 onCreate={() => openCreate(stage.id)}
+                onOpen={setOpenIssueId}
               />
             ))}
           </div>

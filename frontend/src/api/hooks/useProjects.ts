@@ -67,8 +67,8 @@ export const useAddProjectMember = (projectId: Guid) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (dto: AddProjectMemberDto) => projectsApi.addMember(projectId, dto),
-    onSuccess: (members) => {
-      queryClient.setQueryData(queryKeys.projects.members(projectId), members)
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.members(projectId) })
       // Учасники входять у ProjectDto.members, а роль могла змінитися і в нас самих
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.list })
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.myRole(projectId) })

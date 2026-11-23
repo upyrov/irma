@@ -6,7 +6,13 @@ export type EpicColor = "purple" | "blue" | "orange" | "green"
 
 export type Assignee = { id: string; name: string; initials: string; color: string }
 
-export type Stage = { id: string; name: string; isDone: boolean }
+export type Stage = {
+  id: string
+  name: string
+  /** Назва в нижньому регістрі («in progress») — щоб чіпляти кольори / підказки колонок */
+  key: string
+  isDone: boolean
+}
 
 export type Epic = {
   id: string
@@ -19,8 +25,9 @@ export type Sprint = {
   id: string
   name: string
   goal: string | null
-  startDate: string
-  endDate: string
+  /** null — дати ще не задано (запланований спринт) */
+  startDate: string | null
+  endDate: string | null
   status: SprintStatus
 }
 
