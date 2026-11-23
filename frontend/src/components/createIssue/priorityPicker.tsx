@@ -7,7 +7,6 @@ type Props = {
   onChange: (priority: Priority) => void
 }
 
-/** Пріоритет кнопками: усі 5 варіантів видно одразу, з кольоровими іконками */
 export const PriorityPicker = ({ value, onChange }: Props) => {
   return (
     <fieldset className="m-0 border-none p-0">

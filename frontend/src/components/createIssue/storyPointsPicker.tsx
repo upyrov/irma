@@ -7,7 +7,6 @@ type Props = {
   onChange: (value: number | null) => void
 }
 
-/** Шкала Фібоначчі; повторний клік по вибраному значенню знімає оцінку */
 export const StoryPointsPicker = ({ value, onChange }: Props) => {
   return (
     <fieldset className="m-0 flex flex-col gap-1.5 border-none p-0">

@@ -2,7 +2,6 @@ import { type DragEvent, useState } from "react"
 
 export const ISSUE_MIME = "text/plain"
 
-/** Обробники drag'n'drop для секції, куди можна скинути задачу */
 export const useDropTarget = (
   canDrop: boolean,
   onDrop: (issueId: string) => void

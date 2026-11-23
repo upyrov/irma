@@ -16,7 +16,6 @@ export const ASSIGNEE_NONE = "none"
 
 export type BugFilterState = {
   priority: PriorityFilter
-  /** ASSIGNEE_ALL | ASSIGNEE_NONE | id учасника */
   assignee: string
   onlyMine: boolean
 }

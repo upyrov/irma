@@ -44,17 +44,38 @@ public class TeamsController : ControllerBase
         return Ok(teams);
     }
 
-    [HttpGet("{teamId:guid}/search-users")]
-    public async Task<ActionResult<List<UserDto>>> SearchUsersToAdd(Guid teamId, [FromQuery] string? query, CancellationToken cancellationToken)
+    /// <summary>
+    /// GET /api/teams/search-users?query=&amp;teamId= — пошук користувачів за username.
+    /// З teamId — лише ті, кого ще немає в команді.
+    /// </summary>
+    [HttpGet("search-users")]
+    public async Task<ActionResult<List<UserDto>>> SearchUsers([FromQuery] string? query, [FromQuery] Guid? teamId, CancellationToken cancellationToken)
     {
-        var users = await _teamService.SearchUsersToAddAsync(teamId, query ?? string.Empty, cancellationToken);
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var users = await _teamService.SearchUsersAsync(query ?? string.Empty, teamId, currentUserId, cancellationToken);
         return Ok(users);
     }
 
+    /// <summary>Сумісність зі старим роутом: те саме, що search-users?teamId=</summary>
+    [HttpGet("{teamId:guid}/search-users")]
+    public Task<ActionResult<List<UserDto>>> SearchUsersToAdd(Guid teamId, [FromQuery] string? query, CancellationToken cancellationToken) =>
+        SearchUsers(query, teamId, cancellationToken);
+
     [HttpPost("{teamId:guid}/members/{userId:guid}")]
-    public async Task<ActionResult> AddUserToTeam(Guid teamId, Guid userId, CancellationToken cancellationToken)
+    public async Task<ActionResult<TeamDto>> AddUserToTeam(Guid teamId, Guid userId, CancellationToken cancellationToken)
     {
-        await _teamService.AddUserToTeamAsync(teamId, userId, cancellationToken);
-        return NoContent();
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var currentUserId))
+        {
+            return Unauthorized();
+        }
+
+        var team = await _teamService.AddUserToTeamAsync(teamId, userId, currentUserId, cancellationToken);
+        return Ok(team);
     }
 }

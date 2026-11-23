@@ -10,14 +10,10 @@ import type {
 } from "#/types/api"
 import { ApiError } from "../client"
 
-// ───────────────────────────── Внутрішні записи ─────────────────────────────
-// Схожі на сутності Irma.DAL: зберігаємо зв'язки через id, DTO збираємо при видачі.
-
 type MockUser = UserDto & { password: string }
 type MockTeam = { id: Guid; name: string; memberIds: Guid[] }
 type MockProject = {
   id: Guid
-  /** Префікс ключа задачі (KAI-12). У ProjectDto його немає — живе лише тут */
   key: string
   name: string
   description: string | null
@@ -30,8 +26,6 @@ type MockIssue = Omit<IssueDto, "assignee"> & { projectId: Guid; assigneeId: Gui
 type MockComment = Omit<CommentDto, "author"> & { authorId: Guid }
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`
-
-// ───────────────────────────── Початкові дані ─────────────────────────────
 
 const users: MockUser[] = [
   { id: id(1), username: "artem.b", password: "password" },
@@ -182,11 +176,6 @@ const comments: MockComment[] = [
 
 export const db = { users, teams, projects, stages, sprints, issues, comments }
 
-// ───────────────────────────── Сесія ─────────────────────────────
-// Імітує HttpOnly cookie: за замовчуванням — гість. Сесія переживає перезавантаження
-// (localStorage), як справжня cookie: увійшов — лишаєшся залогіненим, вийшов — гість.
-// На сервері (SSR) localStorage немає — там завжди гість.
-
 const SESSION_KEY = "irma-mock-session"
 
 const readSession = (): Guid | null => {
@@ -207,21 +196,16 @@ export const session = {
       if (userId) globalThis.localStorage?.setItem(SESSION_KEY, userId)
       else globalThis.localStorage?.removeItem(SESSION_KEY)
     } catch {
-      // приватний режим / заблоковане сховище — сесія житиме до перезавантаження
     }
   },
 }
 
-// ───────────────────────────── Допоміжне ─────────────────────────────
-
-/** Затримка, щоб на фронтенді було видно стани завантаження */
 export const delay = (ms = 250) => new Promise((r) => setTimeout(r, ms))
 
 export const fail = (status: number, detail: string): never => {
   throw new ApiError(status, { status, title: detail, detail })
 }
 
-/** Повертає копію, щоб компоненти не мутували «базу» напряму */
 export const clone = <T>(value: T): T => structuredClone(value)
 
 export const requireUser = (): MockUser => {
@@ -235,7 +219,6 @@ export const toUserDto = (u: MockUser | undefined): UserDto | null =>
 export const findOr404 = <T>(list: T[], pred: (x: T) => boolean, what: string): T =>
   list.find(pred) ?? fail(404, `${what} не знайдено`)
 
-/** Учасник проєкту з потрібною роллю, інакше 403 */
 export const requireProjectRole = (projectId: Guid, roles: ProjectRole[]) => {
   const user = requireUser()
   const project = findOr404(projects, (p) => p.id === projectId, "Проєкт")

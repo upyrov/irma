@@ -104,14 +104,12 @@ namespace Irma.DAL.Migrations
 
                     b.HasIndex("EpicId");
 
-                    b.HasIndex("IssueKey")
-                        .IsUnique();
-
-                    b.HasIndex("ProjectId");
-
                     b.HasIndex("SprintId");
 
                     b.HasIndex("StageId");
+
+                    b.HasIndex("ProjectId", "IssueKey")
+                        .IsUnique();
 
                     b.ToTable("Issues", (string)null);
                 });

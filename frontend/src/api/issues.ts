@@ -1,4 +1,3 @@
-// 2.4 Дошка, задачі та коментарі
 import type {
   BoardIssueDto,
   CommentCreateDto,
@@ -28,7 +27,6 @@ import {
 
 const findIssue = (issueId: Guid) => findOr404(db.issues, (i) => i.id === issueId, "Задачу")
 
-/** Перевіряє, що пов'язані сутності належать тому самому проєкту */
 const validateRefs = (
   projectId: Guid,
   refs: { stageId?: Guid; sprintId?: Guid | null; epicId?: Guid | null; assigneeId?: Guid | null }
@@ -52,6 +50,18 @@ const validateRefs = (
   }
 }
 
+const toServerUpdate = (dto: IssueUpdateDto) => {
+  const { sprintId, epicId, assigneeId, ...rest } = dto
+  return {
+    ...rest,
+    ...(sprintId === null ? { clearSprint: true } : sprintId !== undefined && { sprintId }),
+    ...(epicId === null ? { clearEpic: true } : epicId !== undefined && { epicId }),
+    ...(assigneeId === null
+      ? { clearAssignee: true }
+      : assigneeId !== undefined && { assigneeId }),
+  }
+}
+
 const mock = {
   async stages(projectId: Guid): Promise<StageDto[]> {
     await delay()
@@ -62,7 +72,6 @@ const mock = {
   async board(projectId: Guid): Promise<BoardIssueDto[]> {
     await delay()
     const { project } = requireProjectRole(projectId, ALL_ROLES)
-    // Scrum — лише активний спринт; Kanban / BugTracking — усі задачі
     const active = db.sprints.find((s) => s.projectId === projectId && s.status === "Active")
     if (project.template === "Scrum" && !active) return []
 
@@ -77,16 +86,19 @@ const mock = {
         id: i.id,
         issueKey: i.issueKey,
         title: i.title,
+        issueType: i.issueType,
         priority: i.priority,
         storyPoints: i.storyPoints,
         stageId: i.stageId,
+        sprintId: i.sprintId,
+        epicId: i.epicId,
+        createdAt: i.createdAt,
         assignee: toUserDto(db.users.find((u) => u.id === i.assigneeId)),
       }))
   },
 
   async create(dto: IssueCreateDto): Promise<IssueDto> {
     await delay()
-    // У IssueCreateDto немає projectId — проєкт визначаємо за колонкою
     const stage = findOr404(db.stages, (s) => s.id === dto.stageId, "Колонку")
     requireProjectRole(stage.projectId, EDITORS)
     const title = dto.title.trim()
@@ -108,12 +120,18 @@ const mock = {
   async update(issueId: Guid, dto: IssueUpdateDto): Promise<IssueDto> {
     await delay(150)
     const issue = findIssue(issueId)
-    requireProjectRole(issue.projectId, EDITORS)
+    const { user, role } = requireProjectRole(issue.projectId, EDITORS)
+    const someoneElses = !!issue.assigneeId && issue.assigneeId !== user.id
+    if (role === "Member" && someoneElses) {
+      if (dto.stageId !== undefined && dto.stageId !== issue.stageId)
+        fail(403, "Статус може змінити лише виконавець або адміністратор")
+      if (dto.assigneeId !== undefined && dto.assigneeId !== issue.assigneeId)
+        fail(403, "Не можна перепризначити чужу задачу")
+    }
     if (dto.title !== undefined && !dto.title.trim()) fail(400, "Назва не може бути порожньою")
     validateRefs(issue.projectId, dto)
     if (dto.epicId && dto.epicId === issue.id) fail(400, "Задача не може бути власним епіком")
 
-    // Відсутні поля не змінюються; null — очищує (див. IssueUpdateDto)
     for (const [key, value] of Object.entries(dto)) {
       if (value !== undefined) (issue as Record<string, unknown>)[key] = value
     }
@@ -154,37 +172,32 @@ const mock = {
 }
 
 export const issuesApi = {
-  /** GET /api/projects/{id}/stages — колонки дошки (за `order`) */
   stages: (projectId: Guid) =>
     USE_MOCKS
       ? mock.stages(projectId)
       : http.get<StageDto[]>(`/api/projects/${projectId}/stages`),
 
-  /** GET /api/projects/{id}/board — картки для дошки */
   board: (projectId: Guid) =>
     USE_MOCKS
       ? mock.board(projectId)
       : http.get<BoardIssueDto[]>(`/api/projects/${projectId}/board`),
 
-  /** POST /api/issues — створення задачі (проєкт визначається за stageId) */
   create: (dto: IssueCreateDto) =>
     USE_MOCKS ? mock.create(dto) : http.post<IssueDto>("/api/issues", dto),
 
-  /** GET /api/issues/{id} — деталі задачі (Issue Modal) */
   get: (issueId: Guid) =>
     USE_MOCKS ? mock.get(issueId) : http.get<IssueDto>(`/api/issues/${issueId}`),
 
-  /** PUT /api/issues/{id} — оновлення (drag'n'drop, story points, епік, спринт) */
   update: (issueId: Guid, dto: IssueUpdateDto) =>
-    USE_MOCKS ? mock.update(issueId, dto) : http.put<IssueDto>(`/api/issues/${issueId}`, dto),
+    USE_MOCKS
+      ? mock.update(issueId, dto)
+      : http.put<IssueDto>(`/api/issues/${issueId}`, toServerUpdate(dto)),
 
-  /** GET /api/issues/{id}/comments — історія коментарів */
   comments: (issueId: Guid) =>
     USE_MOCKS
       ? mock.comments(issueId)
       : http.get<CommentDto[]>(`/api/issues/${issueId}/comments`),
 
-  /** POST /api/issues/{id}/comments — додати коментар */
   addComment: (issueId: Guid, dto: CommentCreateDto) =>
     USE_MOCKS
       ? mock.addComment(issueId, dto)

@@ -16,19 +16,13 @@ const badgeVariants = cva("inline-flex items-center whitespace-nowrap", {
       dark: "bg-ink text-white",
     },
     size: {
-      // Шаблон проєкту
       pill: "rounded-full px-2.5 py-1 text-xs font-semibold",
-      // Епік
       tag: "rounded-md px-2 py-[3px] text-xs font-semibold",
-      // Колонка
       chip: "rounded-md px-2 py-[3px] text-[11px] font-semibold",
-      // Статус спринту
       status:
         "rounded-md px-2 py-[3px] text-[11px] font-bold uppercase tracking-[.04em]",
-      // Лічильник
       count:
         "h-[22px] min-w-[26px] justify-center rounded-full px-1.5 text-xs font-bold",
-      // 3 / 3
       ratio: "h-5 rounded-full px-2 text-xs font-bold",
     },
   },

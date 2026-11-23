@@ -10,12 +10,12 @@ import { bugStageMeta } from "./bugConfig"
 
 type Props = IssueDragProps & {
   stage: Stage
-  /** Уже відсортовані за пріоритетом */
   issues: Issue[]
   canDrop: boolean
   onDropIssue: (issueId: string) => void
-  /** Є лише в колонці New */
   onCreate?: () => void
+  canDrag: (issue: Issue) => boolean
+  showLocks?: boolean
 }
 
 export const BugColumn = ({
@@ -24,13 +24,15 @@ export const BugColumn = ({
   canDrop,
   onDropIssue,
   onCreate,
+  canDrag,
+  showLocks = true,
   draggingId,
   onDragStart,
   onDragEnd,
   onOpen,
 }: Props) => {
   const { isOver, handlers } = useDropTarget(canDrop, onDropIssue)
-  const meta = bugStageMeta[stage.id]
+  const meta = bugStageMeta[stage.key]
 
   return (
     <section
@@ -52,6 +54,8 @@ export const BugColumn = ({
           key={issue.id}
           issue={issue}
           isDragging={draggingId === issue.id}
+          canDrag={canDrag(issue)}
+          showLock={showLocks && !canDrag(issue)}
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
           onOpen={onOpen}

@@ -1,7 +1,10 @@
+import { requireAuth } from '#/api/guards'
 import { Sidebar } from '#/layout/sidebar/sidebar'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app')({
+  ssr: false,
+  beforeLoad: requireAuth,
   component: AppLayout,
 })
 

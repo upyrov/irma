@@ -1,11 +1,11 @@
-import { backlogSprints, type Project, scrumStages } from "#/tempData"
+import type { Project } from "#/api/adapters"
+import type { ProjectView } from "#/api/hooks/useProjectView"
 import { BoardView } from "./board/boardView"
 
-type Props = { project: Project }
+type Props = { view: ProjectView; project: Project }
 
-/** Scrum-дошка: лише задачі активного спринту */
-export const ScrumBoard = ({ project }: Props) => {
-  const activeSprint = backlogSprints.find((s) => s.status === "active") ?? null
+export const ScrumBoard = ({ view, project }: Props) => {
+  const activeSprint = view.sprints.find((s) => s.status === "active") ?? null
 
   if (!activeSprint) {
     return (
@@ -20,12 +20,5 @@ export const ScrumBoard = ({ project }: Props) => {
     )
   }
 
-  return (
-    <BoardView
-      project={project}
-      stages={scrumStages}
-      sprint={activeSprint}
-      pageLabel="Дошка"
-    />
-  )
+  return <BoardView view={view} project={project} sprint={activeSprint} pageLabel="Дошка" />
 }

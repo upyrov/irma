@@ -1,0 +1,16 @@
+/Users/possipaka/imra/irma/backend/Irma.BLL/bin/Debug/net10.0/Irma.BLL.deps.json
+/Users/possipaka/imra/irma/backend/Irma.BLL/bin/Debug/net10.0/Irma.BLL.dll
+/Users/possipaka/imra/irma/backend/Irma.BLL/bin/Debug/net10.0/Irma.BLL.pdb
+/Users/possipaka/imra/irma/backend/Irma.BLL/bin/Debug/net10.0/Irma.DAL.dll
+/Users/possipaka/imra/irma/backend/Irma.BLL/bin/Debug/net10.0/Irma.DAL.pdb
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.csproj.AssemblyReference.cache
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.GeneratedMSBuildEditorConfig.editorconfig
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.AssemblyInfoInputs.cache
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.AssemblyInfo.cs
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.csproj.CoreCompileInputs.cache
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.sourcelink.json
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.csproj.Up2Date
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.dll
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/refint/Irma.BLL.dll
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/Irma.BLL.pdb
+/Users/possipaka/imra/irma/backend/Irma.BLL/obj/Debug/net10.0/ref/Irma.BLL.dll

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { LogoMark } from '#/layout/sidebar/componennts/logo'
 import { type FormEvent, useState } from 'react'
 import { errorMessage, useRegister } from '#/api/hooks/useAuth'
 
@@ -16,7 +17,6 @@ function RouteComponent() {
     e.preventDefault()
     register.mutate(
       { username: username.trim(), password },
-      // Бекенд одразу логінить після реєстрації
       { onSuccess: () => navigate({ to: '/', replace: true }) }
     )
   }
@@ -27,12 +27,8 @@ function RouteComponent() {
     <div className="flex min-h-screen flex-wrap bg-page font-['Inter',system-ui,sans-serif] text-ink">
       <div className="box-border flex flex-[1_1_520px] flex-col justify-between gap-12 bg-ink px-14 py-12 text-white">
         <div className="flex items-center gap-2.5">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.8" aria-hidden="true">
-            <rect x="2.5" y="2.5" width="19" height="19" rx="6" className="fill-primary" stroke="none" />
-            <ellipse cx="12" cy="12" rx="6.5" ry="3" transform="rotate(-30 12 12)" />
-            <circle cx="12" cy="12" r="1.6" fill="#FFFFFF" stroke="none" />
-          </svg>
-          <span className="font-['Manrope',sans-serif] text-[22px] font-extrabold tracking-[-0.02em]">Orbit</span>
+          <LogoMark size={30} />
+          <span className="font-['Manrope',sans-serif] text-[22px] font-extrabold tracking-[-0.02em]">Irma</span>
         </div>
 
         <div className="max-w-[480px] my-auto">
@@ -56,7 +52,6 @@ function RouteComponent() {
         </div>
       </div>
 
-      {/* Права панель з формою */}
       <div className="box-border flex flex-[1_1_520px] items-center justify-center px-6 py-12">
         <form onSubmit={handleSubmit} className="flex w-full max-w-[400px] flex-col gap-5">
           <div>

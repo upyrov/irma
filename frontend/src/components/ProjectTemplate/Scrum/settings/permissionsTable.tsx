@@ -14,6 +14,8 @@ type Permission = { name: string; roles: ProjectRole[] }
 const permissions: Permission[] = [
   { name: "Перегляд дошки та беклогу", roles: ["owner", "admin", "member", "viewer"] },
   { name: "Створення та редагування задач", roles: ["owner", "admin", "member"] },
+  { name: "Зміна статусу та виконавця своїх задач", roles: ["owner", "admin", "member"] },
+  { name: "Зміна статусу та виконавця чужих задач", roles: ["owner", "admin"] },
   { name: "Коментування задач", roles: ["owner", "admin", "member"] },
   { name: "Керування спринтами", roles: ["owner", "admin"] },
   { name: "Додавання учасників і зміна ролей", roles: ["owner", "admin"] },

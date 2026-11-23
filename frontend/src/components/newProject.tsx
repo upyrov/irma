@@ -1,18 +1,54 @@
-import { teams } from "#/tempData";
+import { useNavigate } from "@tanstack/react-router";
+import { type FormEvent, useState } from "react";
+import { errorMessage } from "#/api/hooks/useAuth";
+import { useCreateProject } from "#/api/hooks/useProjects";
+import { useTeams } from "#/api/hooks/useTeams";
+import { projectKeyOf } from "#/api/adapters";
+import type { ProjectTemplate } from "#/types/api";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
+import { NewTeam } from "./newTeam";
 
 type Props = {
     setIsOpenNewProject: (value: boolean) => void,
 }
 
 export const NewProject = ({setIsOpenNewProject}: Props) => {
+    const { data: teams = [] } = useTeams()
+    const createProject = useCreateProject()
+    const navigate = useNavigate()
+    const [name, setName] = useState("")
+    const [teamId, setTeamId] = useState("")
+    const [description, setDescription] = useState("")
+    const [template, setTemplate] = useState<ProjectTemplate>("Scrum")
+    const [touched, setTouched] = useState(false)
+    const [creatingTeam, setCreatingTeam] = useState(false)
+    const key = name.trim() ? projectKeyOf(name.trim()) : null
+
+    const submit = (e: FormEvent) => {
+        e.preventDefault()
+        setTouched(true)
+        if (!name.trim() || !teamId) return
+        createProject.mutate(
+            { name: name.trim(), teamId, template, description: description.trim() || null },
+            {
+                onSuccess: (project) => {
+                    setIsOpenNewProject(false)
+                    navigate({
+                        to: template === "Scrum" ? "/projects/$projectId/backlog" : "/projects/$projectId/board",
+                        params: { projectId: project.id },
+                    })
+                },
+            },
+        )
+    }
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/55 p-4">
             <form
+    onSubmit={submit}
     role="dialog"
     aria-modal="true"
     aria-labelledby="cp-title"
@@ -40,26 +76,41 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
     <div className="flex flex-col gap-5 px-7 py-6">
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
         <div className="flex flex-col gap-1.5">
-          {/* <label htmlFor="cp-name" className="text-sm font-semibold">Назва проєкту</label> */}
           <Label >Назва проєкту</Label>
           <input
             id="cp-name"
             type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-invalid={touched && !name.trim()}
+            aria-describedby="cp-key"
             className="h-11 rounded-[10px] border border-border-input px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
           />
+          {key && (
+            <p id="cp-key" className="m-0 text-[13px] text-muted">
+              Ключі задач: {key}-1, {key}-2…
+            </p>
+          )}
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="cp-team" className="text-sm font-semibold">Команда</label>
-            <Select>                       
-          <SelectTrigger>             
-            <SelectValue placeholder="Оберіть команду" /> 
+            <Select value={teamId} onValueChange={setTeamId}>
+          <SelectTrigger aria-invalid={touched && !teamId}>
+            <SelectValue placeholder={teams.length ? "Оберіть команду" : "Спершу створіть команду"} />
           </SelectTrigger>
           <SelectContent>
             {teams.map((t) => (
-                <SelectItem value={t.name}>{t.name}</SelectItem>
-            ))}           
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
+          <button
+            type="button"
+            onClick={() => setCreatingTeam(true)}
+            className="self-start text-[13px] font-semibold text-primary hover:text-primary-hover"
+          >
+            + Нова команда
+          </button>
         </div>
       </div>
 
@@ -67,7 +118,12 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
         <label htmlFor="cp-desc" className="text-sm font-semibold">
           Опис <span className="font-normal text-muted">— необов'язково</span>
         </label>
-        <Textarea placeholder="Коротко: що робимо і для кого" rows={3}/>
+        <Textarea
+          placeholder="Коротко: що робимо і для кого"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
       </div>
 
       <fieldset className="m-0 flex flex-col gap-2.5 border-none p-0">
@@ -88,7 +144,8 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
                   type="radio"
                   name="template"
                   value={tpl.value}
-                  defaultChecked={tpl.value === 'Scrum'}
+                  checked={template === tpl.value}
+                  onChange={() => setTemplate(tpl.value as ProjectTemplate)}
                   className="m-0 h-[18px] w-[18px] accent-primary"
                 />
               </div>
@@ -106,16 +163,24 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
       </fieldset>
     </div>
 
+    {(createProject.error || (touched && (!name.trim() || !teamId))) && (
+      <p className="m-0 px-7 pb-3 text-sm text-danger-text">
+        {createProject.error ? errorMessage(createProject.error) : "Вкажіть назву проєкту та команду"}
+      </p>
+    )}
 
     <div className="flex flex-wrap justify-end gap-2.5 rounded-b-[18px] border-t border-border bg-[#FAFBFC] px-7 py-4">
-        <Button variant={"secondary"} onClick={() => setIsOpenNewProject(false)}>
+        <Button type="button" variant={"secondary"} onClick={() => setIsOpenNewProject(false)}>
             Скасувати
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={createProject.isPending}>
             Створити проєкт
         </Button>
     </div>
   </form>
+            {creatingTeam && (
+                <NewTeam onClose={() => setCreatingTeam(false)} onCreated={(team) => setTeamId(team.id)} />
+            )}
         </div>
   
 );

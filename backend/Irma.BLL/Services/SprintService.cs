@@ -1,4 +1,5 @@
 using Irma.BLL.DTOs;
+using Irma.BLL.Exceptions;
 using Irma.DAL;
 using Irma.DAL.Entities;
 using Irma.DAL.Enums;
@@ -17,7 +18,7 @@ public class SprintService : ISprintService
 
     public async Task<List<SprintDto>> GetByProjectAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
     {
-        await EnsureProjectAccessAsync(projectId, currentUserId, cancellationToken);
+        await _dbContext.RequireRoleAsync(projectId, currentUserId, cancellationToken);
 
         return await _dbContext.Sprints
             .Where(s => s.ProjectId == projectId)
@@ -38,7 +39,8 @@ public class SprintService : ISprintService
 
     public async Task<SprintDto> CreateAsync(Guid projectId, SprintCreateDto dto, Guid currentUserId, CancellationToken cancellationToken)
     {
-        await EnsureProjectAccessAsync(projectId, currentUserId, cancellationToken);
+        var role = await _dbContext.RequireRoleAsync(projectId, currentUserId, cancellationToken);
+        ProjectAccess.EnsureCanManage(role);
 
         var sprint = new Sprint
         {
@@ -72,10 +74,27 @@ public class SprintService : ISprintService
             .FirstOrDefaultAsync(s => s.Id == sprintId, cancellationToken);
         if (sprint is null)
         {
-            throw new ArgumentException("Sprint was not found.");
+            throw new NotFoundException("Sprint was not found.");
         }
 
-        await EnsureProjectAccessAsync(sprint.ProjectId, currentUserId, cancellationToken);
+        var role = await _dbContext.RequireRoleAsync(sprint.ProjectId, currentUserId, cancellationToken);
+        ProjectAccess.EnsureCanManage(role);
+
+        if (sprint.Status != SprintStatus.Planned)
+        {
+            throw new ConflictException("Only a planned sprint can be started.");
+        }
+
+        var hasActiveSprint = await _dbContext.Sprints
+            .AnyAsync(s => s.ProjectId == sprint.ProjectId && s.Status == SprintStatus.Active, cancellationToken);
+        if (hasActiveSprint)
+        {
+            throw new ConflictException("The project already has an active sprint.");
+        }
+
+        // Якщо дати не задали при створенні — стартуємо сьогодні на 2 тижні
+        sprint.StartDate ??= DateTimeOffset.UtcNow;
+        sprint.EndDate ??= sprint.StartDate.Value.AddDays(14);
         sprint.Status = SprintStatus.Active;
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -86,10 +105,16 @@ public class SprintService : ISprintService
             .FirstOrDefaultAsync(s => s.Id == sprintId, cancellationToken);
         if (sprint is null)
         {
-            throw new ArgumentException("Sprint was not found.");
+            throw new NotFoundException("Sprint was not found.");
         }
 
-        await EnsureProjectAccessAsync(sprint.ProjectId, currentUserId, cancellationToken);
+        var role = await _dbContext.RequireRoleAsync(sprint.ProjectId, currentUserId, cancellationToken);
+        ProjectAccess.EnsureCanManage(role);
+
+        if (sprint.Status != SprintStatus.Active)
+        {
+            throw new ConflictException("Only an active sprint can be completed.");
+        }
 
         var issues = await _dbContext.Issues
             .Where(i => i.SprintId == sprintId)
@@ -112,12 +137,20 @@ public class SprintService : ISprintService
 
     public async Task<List<BoardIssueDto>> GetBacklogAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
     {
-        await EnsureProjectAccessAsync(projectId, currentUserId, cancellationToken);
+        await _dbContext.RequireRoleAsync(projectId, currentUserId, cancellationToken);
 
         return await _dbContext.Issues
-            .Where(i => i.ProjectId == projectId && i.SprintId == null)
+            // Беклог = задачі без спринту + задачі запланованих спринтів (фронтенд групує за SprintId).
+            // Епіки сюди не входять — для них є /epics.
+            .Where(i => i.ProjectId == projectId
+                && i.IssueType != IssueType.Epic
+                && (i.SprintId == null || i.Sprint!.Status == SprintStatus.Planned))
             .Select(i => new BoardIssueDto
             {
+                IssueType = i.IssueType,
+                SprintId = i.SprintId,
+                EpicId = i.EpicId,
+                CreatedAt = i.CreatedAt,
                 Id = i.Id,
                 IssueKey = i.IssueKey,
                 Title = i.Title,
@@ -133,15 +166,5 @@ public class SprintService : ISprintService
                     }
             })
             .ToListAsync(cancellationToken);
-    }
-
-    private async Task EnsureProjectAccessAsync(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)
-    {
-        var hasAccess = await _dbContext.ProjectMembers
-            .AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == currentUserId, cancellationToken);
-        if (!hasAccess)
-        {
-            throw new UnauthorizedAccessException();
-        }
     }
 }

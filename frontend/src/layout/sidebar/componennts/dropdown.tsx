@@ -1,17 +1,17 @@
 import { Link, useParams, useRouterState } from "@tanstack/react-router"
+import { Spinner } from "#/components/ui/spinner"
 import { Check, ChevronDown } from "lucide-react"
 import { DropdownMenu } from "radix-ui"
 import { Badge } from "#/components/ui/badge"
+import type { Project } from "#/api/adapters"
+import { useUiProjects } from "#/api/hooks/useProjectView"
 import {
-  findProject,
   firstSection,
   hasSection,
   type ProjectSection,
   sectionPath,
 } from "#/lib/projectTemplates"
-import { type Project, projects } from "#/tempData"
 
-/** Розділ, у якому зараз користувач, — щоб після перемикання проєкту лишитися в ньому */
 const useCurrentSection = (): ProjectSection => {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const section = pathname.split("/")[3]
@@ -24,15 +24,23 @@ const itemClass =
 export function ProjectSwitcher() {
   const { projectId } = useParams({ strict: false })
   const section = useCurrentSection()
-  const current = findProject(projectId) ?? projects[0]
+  const { data: projects = [] } = useUiProjects()
+  const current = projects.find((p) => p.id === projectId) ?? projects[0]
 
-  /** Той самий розділ, якщо він є в шаблоні, інакше перший доступний; null — проєкт закритий */
   const targetFor = (template: Project["template"]): ProjectSection | null => {
     if (template === "Scrum") return "backlog" 
 
     return hasSection(template, section) ? section : firstSection(template)
   }
     
+
+  if (!current) {
+    return (
+      <div className="flex h-[56px] items-center justify-center rounded-xl border border-border px-3">
+        <Spinner label="Завантаження проєкту" className="size-5" />
+      </div>
+    )
+  }
 
   return (
     <DropdownMenu.Root>
@@ -88,7 +96,6 @@ export function ProjectSwitcher() {
               </>
             )
 
-            // Проєкт без жодного доступного розділу не відкривається
             if (!target) {
               return (
                 <DropdownMenu.Item key={p.id} disabled className={itemClass}>
@@ -101,7 +108,7 @@ export function ProjectSwitcher() {
               <DropdownMenu.Item key={p.id} asChild>
                 <Link
                   to={sectionPath[target]}
-                  params={{ projectId: String(p.id) }}
+                  params={{ projectId: p.id }}
                   className={itemClass}
                 >
                   {content}

@@ -1,4 +1,5 @@
 using Irma.BLL.DTOs;
+using Irma.BLL.Exceptions;
 using Irma.DAL;
 using Irma.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,9 @@ namespace Irma.BLL.Services;
 
 public class TeamService : ITeamService
 {
+    public const int MinSearchLength = 2;
+    private const int SearchLimit = 20;
+
     private readonly AppDbContext _dbContext;
 
     public TeamService(AppDbContext dbContext)
@@ -16,21 +20,24 @@ public class TeamService : ITeamService
 
     public async Task<TeamDto> CreateAsync(TeamCreateDto dto, Guid currentUserId, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(dto.Name))
+        var name = dto.Name?.Trim() ?? string.Empty;
+        if (name.Length == 0)
         {
             throw new ArgumentException("Team name is required.");
         }
 
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken);
-        if (user is null)
+        if (name.Length > TeamCreateDto.NameMaxLength)
         {
-            throw new UnauthorizedAccessException();
+            throw new ArgumentException($"Team name must not exceed {TeamCreateDto.NameMaxLength} characters.");
         }
+
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken)
+            ?? throw new UnauthorizedAccessException();
 
         var team = new Team
         {
             Id = Guid.NewGuid(),
-            Name = dto.Name.Trim()
+            Name = name
         };
 
         team.Members.Add(user);
@@ -38,30 +45,20 @@ public class TeamService : ITeamService
         _dbContext.Teams.Add(team);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return new TeamDto
-        {
-            Id = team.Id,
-            Name = team.Name,
-            Members =
-            [
-                new UserDto
-                {
-                    Id = user.Id,
-                    Username = user.Username
-                }
-            ]
-        };
+        return ToDto(team);
     }
 
     public async Task<List<TeamDto>> GetMyTeamsAsync(Guid currentUserId, CancellationToken cancellationToken)
     {
         return await _dbContext.Teams
             .Where(t => t.Members.Any(m => m.Id == currentUserId))
+            .OrderBy(t => t.Name)
             .Select(t => new TeamDto
             {
                 Id = t.Id,
                 Name = t.Name,
                 Members = t.Members
+                    .OrderBy(m => m.Username)
                     .Select(m => new UserDto
                     {
                         Id = m.Id,
@@ -72,54 +69,88 @@ public class TeamService : ITeamService
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<UserDto>> SearchUsersToAddAsync(Guid teamId, string searchTerm, CancellationToken cancellationToken)
+    public async Task<List<UserDto>> SearchUsersAsync(string searchTerm, Guid? teamId, Guid currentUserId, CancellationToken cancellationToken)
     {
-        var teamMemberIds = await _dbContext.Teams
-            .Where(t => t.Id == teamId)
-            .SelectMany(t => t.Members.Select(m => m.Id))
-            .ToListAsync(cancellationToken);
-
-        var query = _dbContext.Users
-            .Where(u => !teamMemberIds.Contains(u.Id));
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
+        var term = searchTerm?.Trim() ?? string.Empty;
+        if (term.Length < MinSearchLength)
         {
-            query = query.Where(u => u.Username.Contains(searchTerm));
+            // Порожній запит не повинен віддавати список усіх користувачів
+            return [];
         }
 
+        var query = _dbContext.Users.Where(u => u.Id != currentUserId);
+
+        if (teamId is { } id)
+        {
+            await EnsureTeamMemberAsync(id, currentUserId, cancellationToken);
+            query = query.Where(u => !u.Teams.Any(t => t.Id == id));
+        }
+
+        var pattern = $"%{EscapeLike(term)}%";
+
         return await query
+            .Where(u => EF.Functions.ILike(u.Username, pattern, "\\"))
+            .OrderBy(u => u.Username.Length)
+            .ThenBy(u => u.Username)
+            .Take(SearchLimit)
             .Select(u => new UserDto
             {
                 Id = u.Id,
                 Username = u.Username
             })
-            .Take(50)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddUserToTeamAsync(Guid teamId, Guid userId, CancellationToken cancellationToken)
+    public async Task<TeamDto> AddUserToTeamAsync(Guid teamId, Guid userId, Guid currentUserId, CancellationToken cancellationToken)
     {
         var team = await _dbContext.Teams
             .Include(t => t.Members)
-            .FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken);
+            .FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken)
+            ?? throw new NotFoundException("Team not found.");
 
-        if (team is null)
+        if (team.Members.All(m => m.Id != currentUserId))
         {
-            throw new ArgumentException("Team not found.");
-        }
-
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
-        if (user is null)
-        {
-            throw new ArgumentException("User not found.");
+            throw new ForbiddenException("You are not a member of this team.");
         }
 
         if (team.Members.Any(m => m.Id == userId))
         {
-            throw new InvalidOperationException("User is already a member of this team.");
+            throw new ConflictException("User is already a member of this team.");
         }
+
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
 
         team.Members.Add(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ToDto(team);
     }
+
+    private async Task EnsureTeamMemberAsync(Guid teamId, Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var team = await _dbContext.Teams
+            .Where(t => t.Id == teamId)
+            .Select(t => new { IsMember = t.Members.Any(m => m.Id == currentUserId) })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new NotFoundException("Team not found.");
+
+        if (!team.IsMember)
+        {
+            throw new ForbiddenException("You are not a member of this team.");
+        }
+    }
+
+    private static string EscapeLike(string value) =>
+        value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+
+    private static TeamDto ToDto(Team team) => new()
+    {
+        Id = team.Id,
+        Name = team.Name,
+        Members = team.Members
+            .OrderBy(m => m.Username)
+            .Select(m => new UserDto { Id = m.Id, Username = m.Username })
+            .ToList()
+    };
 }

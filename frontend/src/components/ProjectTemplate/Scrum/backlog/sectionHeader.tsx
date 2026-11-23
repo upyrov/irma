@@ -9,7 +9,6 @@ type Props = {
   children?: ReactNode
 }
 
-/** Заголовок секції спринту / беклогу зі згортанням */
 export const SectionHeader = ({ title, collapsed, onToggle, children }: Props) => {
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-hover px-[18px] py-4">

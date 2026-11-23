@@ -16,6 +16,7 @@ type Props = IssueDragProps & {
   onDropIssue: (issueId: string) => void
   onEdit?: () => void
   onStart?: () => void
+  startHint?: string
 }
 
 export const SprintSection = ({
@@ -26,6 +27,7 @@ export const SprintSection = ({
   onDropIssue,
   onEdit,
   onStart,
+  startHint = "Спершу завершіть активний спринт",
   ...drag
 }: Props) => {
   const [collapsed, setCollapsed] = useState(false)
@@ -61,7 +63,13 @@ export const SprintSection = ({
         >
           <Pencil className="size-4" />
         </Button>
-        <Button size="xs" onClick={onStart} className="px-3.5">
+        <Button
+          size="xs"
+          onClick={onStart}
+          disabled={!onStart}
+          title={onStart ? undefined : startHint}
+          className="px-3.5"
+        >
           <Play className="size-3.5 fill-current" />
           Start Sprint
         </Button>

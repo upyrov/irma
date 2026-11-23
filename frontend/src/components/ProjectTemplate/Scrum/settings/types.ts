@@ -14,7 +14,6 @@ export const roleLabels: Record<ProjectRole, string> = {
   viewer: "Viewer",
 }
 
-/** Ролі, які можна призначити (Owner — лише один, призначається при створенні) */
 export const assignableRoles: ProjectRole[] = ["admin", "member", "viewer"]
 
 export const allRoles: ProjectRole[] = ["owner", "admin", "member", "viewer"]

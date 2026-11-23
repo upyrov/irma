@@ -1,21 +1,17 @@
 import type { ProblemDetails } from "#/types/api"
 
-/**
- * Поки бекенд не готовий — усі функції API працюють із заглушкою в пам'яті (`mock/`).
- * Щоб перейти на справжній бекенд, задай у `.env.local`:
- *   VITE_USE_MOCKS=false
- *   VITE_API_URL=http://localhost:5172
- */
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== "false"
+export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
 
 const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:5172").replace(/\/$/, "")
+
+type ErrorBody = ProblemDetails & { message?: string; errorCode?: string }
 
 export class ApiError extends Error {
   constructor(
     public status: number,
-    public problem: ProblemDetails = {}
+    public problem: ErrorBody = {}
   ) {
-    super(problem.detail ?? problem.title ?? `HTTP ${status}`)
+    super(problem.message ?? problem.detail ?? problem.title ?? `HTTP ${status}`)
     this.name = "ApiError"
   }
 }
@@ -39,7 +35,6 @@ const buildUrl = (path: string, query?: Query) => {
 async function request<T>(method: string, path: string, opts: RequestOptions = {}): Promise<T> {
   const res = await fetch(buildUrl(path, opts.query), {
     method,
-    // JWT лежить у HttpOnly cookie — браузер має надсилати її сам
     credentials: "include",
     headers: opts.body !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
@@ -51,7 +46,6 @@ async function request<T>(method: string, path: string, opts: RequestOptions = {
     throw new ApiError(res.status, problem)
   }
 
-  // 204 No Content / порожнє тіло
   const text = await res.text()
   return (text ? JSON.parse(text) : undefined) as T
 }

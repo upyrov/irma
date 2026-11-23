@@ -7,7 +7,6 @@ const titleClass =
   "m-0 font-display text-[28px] font-extrabold tracking-[-0.02em]"
 
 type Props = {
-  /** Активний спринт для Scrum; null — Kanban-дошка */
   sprint: Sprint | null
   onCompleteSprint?: () => void
 }
@@ -40,9 +39,11 @@ export const BoardTitle = ({ sprint, onCompleteSprint }: Props) => {
           </b>
         </p>
       </div>
-      <Button variant="secondary" size="sm" onClick={onCompleteSprint}>
-        Завершити спринт
-      </Button>
+      {onCompleteSprint && (
+        <Button variant="secondary" size="sm" onClick={onCompleteSprint}>
+          Завершити спринт
+        </Button>
+      )}
     </div>
   )
 }

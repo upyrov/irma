@@ -1,6 +1,11 @@
-import { teams } from "#/tempData"
+import { useState } from "react"
+import { colorFor } from "#/api/adapters"
+import { useTeams } from "#/api/hooks/useTeams"
+import { NewTeam } from "#/components/newTeam"
 
 export const HomeProjectsTeamList = () => {
+  const { data: teams = [] } = useTeams()
+  const [creating, setCreating] = useState(false)
 
     return (
     <div className="flex flex-col gap-1.5">
@@ -8,7 +13,9 @@ export const HomeProjectsTeamList = () => {
         <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted">Мої команди</span>
         <button
           type="button"
+          onClick={() => setCreating(true)}
           aria-label="Створити команду"
+          title="Створити команду"
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-hover hover:text-ink"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
@@ -22,7 +29,7 @@ export const HomeProjectsTeamList = () => {
           <li key={t.id} className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-ink hover:bg-hover">
             <span
               className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white"
-              style={{ background: t.color }}
+              style={{ background: colorFor(t.id) }}
             >
               {t.name[0]}
             </span>
@@ -31,6 +38,8 @@ export const HomeProjectsTeamList = () => {
           </li>
         ))}
       </ul>
+
+      {creating && <NewTeam onClose={() => setCreating(false)} />}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import type { Epic, Issue } from "./types"
 
 export type IssueDragProps = {
   draggingId: string | null
-  onDragStart: (id: string) => void
+  onDragStart?: (id: string) => void
   onDragEnd: () => void
   onOpen?: (id: string) => void
 }

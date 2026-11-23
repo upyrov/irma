@@ -1,12 +1,7 @@
 import { Link, useParams } from "@tanstack/react-router"
 import type { ReactNode } from "react"
-import {
-  findProject,
-  hasSection,
-  type ProjectSection,
-  sectionPath,
-} from "#/lib/projectTemplates"
-import { projects } from "#/tempData"
+import { useUiProject } from "#/api/hooks/useProjectView"
+import { hasSection, type ProjectSection, sectionPath } from "#/lib/projectTemplates"
 
 export const navItemClass =
   "flex h-10 items-center gap-2.5 rounded-lg px-2.5 text-sm no-underline"
@@ -28,8 +23,8 @@ const icon = (children: ReactNode) => (
 )
 
 export const Navigation = () => {
-  const { projectId = String(projects[0].id) } = useParams({ strict: false })
-  const project = findProject(projectId)
+  const { projectId = "" } = useParams({ strict: false })
+  const project = useUiProject(projectId)
   const isKanban = project?.template === "Kanban"
   const isBugTracking = project?.template === "Bug tracking"
 
@@ -62,7 +57,6 @@ export const Navigation = () => {
     },
   ]
 
-  // Лише розділи, які є в шаблоні проєкту
   const sections = project
     ? allSections.filter((s) => hasSection(project.template, s.id))
     : []
@@ -72,7 +66,10 @@ export const Navigation = () => {
       <span className="px-2.5 pb-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-muted">
         Планування
       </span>
-      {sections.length === 0 && (
+      {project === null && (
+        <p className="m-0 px-2.5 text-[13px] leading-normal text-muted">Проєкт не знайдено.</p>
+      )}
+      {project && sections.length === 0 && (
         <p className="m-0 px-2.5 text-[13px] leading-normal text-muted">
           Для цього шаблону розділи ще в розробці.
         </p>

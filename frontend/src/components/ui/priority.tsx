@@ -86,7 +86,6 @@ function PriorityIcon({
   )
 }
 
-/** Іконка + назва пріоритету */
 function PriorityLabel({
   priority,
   className,

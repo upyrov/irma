@@ -6,7 +6,12 @@ export type EpicColor = "purple" | "blue" | "orange" | "green"
 
 export type Assignee = { id: string; name: string; initials: string; color: string }
 
-export type Stage = { id: string; name: string; isDone: boolean }
+export type Stage = {
+  id: string
+  name: string
+  key: string
+  isDone: boolean
+}
 
 export type Epic = {
   id: string
@@ -19,8 +24,8 @@ export type Sprint = {
   id: string
   name: string
   goal: string | null
-  startDate: string
-  endDate: string
+  startDate: string | null
+  endDate: string | null
   status: SprintStatus
 }
 
@@ -36,6 +41,5 @@ export type Issue = {
   stageId: string
   sprintId: string | null
   done: boolean
-  /** ISO-дата створення (для «2 дні тому» на дошці багів) */
   createdAt?: string
 }

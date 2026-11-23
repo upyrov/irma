@@ -1,14 +1,16 @@
 import { Link } from "@tanstack/react-router"
+import { PageSpinner } from "#/components/ui/spinner"
 import type { ReactNode } from "react"
 import { Badge } from "#/components/ui/badge"
+import type { Project } from "#/api/adapters"
+import { errorMessage } from "#/api/hooks/useAuth"
+import { useUiProjects } from "#/api/hooks/useProjectView"
 import { firstSection, sectionPath } from "#/lib/projectTemplates"
-import { projects } from "#/tempData"
 
 const cardClass =
   "flex flex-col gap-4 rounded-[14px] border border-border bg-white p-5 text-ink no-underline"
 
-/** Картка відкриває перший доступний розділ; якщо таких немає — картка неактивна */
-const ProjectCard = ({ project, children }: { project: (typeof projects)[number]; children: ReactNode }) => {
+const ProjectCard = ({ project, children }: { project: Project; children: ReactNode }) => {
   const section = firstSection(project.template)
   if (!section) {
     return (
@@ -20,7 +22,7 @@ const ProjectCard = ({ project, children }: { project: (typeof projects)[number]
   return (
     <Link
       to={sectionPath[section]}
-      params={{ projectId: String(project.id) }}
+      params={{ projectId: project.id }}
       className={`${cardClass} hover:border-primary hover:shadow-[0_6px_20px_rgba(22,24,29,0.08)]`}
     >
       {children}
@@ -28,11 +30,22 @@ const ProjectCard = ({ project, children }: { project: (typeof projects)[number]
   )
 }
 
+type Props = { onCreate?: () => void }
 
-export const ProjectList = () => {
+export const ProjectList = ({ onCreate }: Props) => {
+    const { data: projects, isPending, error } = useUiProjects()
+
+    if (isPending) return <PageSpinner label="Завантаження проєктів" />
+    if (error) return <p className="text-sm text-danger-text">{errorMessage(error)}</p>
+
     return (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
-              {projects.map((p) => (
+              {projects?.length === 0 && (
+                <p className="col-span-full text-sm text-muted">
+                  Поки що немає проєктів. Створіть команду на сторінці «Команди», а потім — проєкт.
+                </p>
+              )}
+              {(projects ?? []).map((p) => (
                 <ProjectCard key={p.id} project={p}>
                   <div className="flex items-center gap-3">
                     <span
@@ -44,7 +57,7 @@ export const ProjectList = () => {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-base font-bold">{p.name}</div>
                       <div className="font-['JetBrains_Mono',monospace] text-xs text-muted">
-                        {p.key} · {p.team}
+                        {p.key}{p.team && ` · ${p.team}`}
                       </div>
                     </div>
                     <span
@@ -87,6 +100,7 @@ export const ProjectList = () => {
         
               <button
                 type="button"
+                onClick={onCreate}
                 className="flex min-h-[196px] flex-col items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-dashed border-[#C3C8D1] text-[15px] font-semibold text-text-2 hover:border-primary"
               >
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-tint text-primary">

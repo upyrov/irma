@@ -11,4 +11,8 @@ public class BoardIssueDto
     public int? StoryPoints { get; set; }
     public Guid StageId { get; set; }
     public UserDto? Assignee { get; set; }
+    public IssueType IssueType { get; set; }
+    public Guid? SprintId { get; set; }
+    public Guid? EpicId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 }

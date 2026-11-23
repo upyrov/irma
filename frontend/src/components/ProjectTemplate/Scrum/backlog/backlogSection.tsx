@@ -13,7 +13,8 @@ type Props = IssueDragProps & {
   epicsById: Record<string, Epic>
   canDrop: boolean
   onDropIssue: (issueId: string) => void
-  onCreateIssue: (data: { type: TaskType; title: string }) => void
+  onCreateIssue?: (data: { type: TaskType; title: string }) => Promise<unknown>
+  formatCreateError: (error: unknown) => string
   onCreateSprint?: () => void
 }
 
@@ -23,6 +24,7 @@ export const BacklogSection = ({
   canDrop,
   onDropIssue,
   onCreateIssue,
+  formatCreateError,
   onCreateSprint,
   ...drag
 }: Props) => {
@@ -44,14 +46,16 @@ export const BacklogSection = ({
           {issuesCount(issues.length)} без спринту
         </span>
         <span className="flex-1" />
-        <Button
-          variant="secondary"
-          size="xs"
-          onClick={onCreateSprint}
-          className="px-3.5"
-        >
-          Створити спринт
-        </Button>
+        {onCreateSprint && (
+          <Button
+            variant="secondary"
+            size="xs"
+            onClick={onCreateSprint}
+            className="px-3.5"
+          >
+            Створити спринт
+          </Button>
+        )}
       </SectionHeader>
 
       {!collapsed && (
@@ -69,7 +73,7 @@ export const BacklogSection = ({
         label="Відпустіть, щоб повернути в беклог"
       />
 
-      <QuickCreateForm onCreate={onCreateIssue} />
+      {onCreateIssue && <QuickCreateForm onCreate={onCreateIssue} formatError={formatCreateError} />}
     </section>
   )
 }

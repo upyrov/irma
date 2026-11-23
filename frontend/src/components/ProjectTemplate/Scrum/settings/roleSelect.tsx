@@ -14,7 +14,6 @@ type Props = {
   onChange: (role: ProjectRole) => void
 }
 
-/** Роль учасника у вигляді RoleBadge, що відкриває список ролей */
 export const RoleSelect = ({ value, onChange }: Props) => {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as ProjectRole)}>

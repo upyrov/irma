@@ -16,7 +16,9 @@ public class IssueConfiguration : IEntityTypeConfiguration<Issue>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.HasIndex(i => i.IssueKey)
+        // Префікс ключа береться з назви проєкту і може збігатися в різних проєктів
+        // («Курсова» і «Курсова робота» → КУРС) — тож ключ унікальний лише в межах проєкту
+        builder.HasIndex(i => new { i.ProjectId, i.IssueKey })
             .IsUnique();
 
         builder.Property(i => i.Title)

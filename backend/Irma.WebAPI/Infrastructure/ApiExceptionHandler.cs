@@ -1,4 +1,5 @@
 using FluentValidation;
+using Irma.BLL.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Irma.WebAPI.Infrastructure;
@@ -10,6 +11,9 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         var statusCode = exception switch
         {
             ValidationException => StatusCodes.Status400BadRequest,
+            NotFoundException => StatusCodes.Status404NotFound,
+            ForbiddenException => StatusCodes.Status403Forbidden,
+            ConflictException => StatusCodes.Status409Conflict,
             UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
             ArgumentException => StatusCodes.Status400BadRequest,
             InvalidOperationException => exception.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase)
@@ -22,6 +26,8 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         {
             StatusCodes.Status400BadRequest => "BAD_REQUEST",
             StatusCodes.Status401Unauthorized => "UNAUTHORIZED",
+            StatusCodes.Status403Forbidden => "FORBIDDEN",
+            StatusCodes.Status404NotFound => "NOT_FOUND",
             StatusCodes.Status409Conflict => "CONFLICT",
             _ => "INTERNAL_SERVER_ERROR"
         };

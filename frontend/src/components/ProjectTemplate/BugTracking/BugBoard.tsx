@@ -1,18 +1,15 @@
 import { useMemo, useState } from "react"
-import { buildIssue, nextIssueKey } from "#/components/createIssue/buildIssue"
+import type { Project } from "#/api/adapters"
+import type { ProjectView } from "#/api/hooks/useProjectView"
+import { nextIssueKey } from "#/components/createIssue/buildIssue"
 import { CreateIssueModal } from "#/components/createIssue/createIssueModal"
-import type { NewIssueDefaults, NewIssueValues } from "#/components/createIssue/types"
+import type { NewIssueDefaults } from "#/components/createIssue/types"
 import type { Issue } from "#/components/ProjectTemplate/Scrum/backlog/types"
+import { IssueDetailModal } from "#/components/issueDetail/issueDetailModal"
+import { ErrorBanner } from "#/components/ProjectTemplate/pageState"
 import { ProjectHeader } from "#/components/projectHeader"
-import {
-  bugIssues,
-  bugStages,
-  currentUserId,
-  type Project,
-  projectMembers,
-} from "#/tempData"
 import { BugColumn } from "./bugColumn"
-import { BUG_INTAKE_STAGE, byPriority, matchesPriority } from "./bugConfig"
+import { byPriority, matchesPriority } from "./bugConfig"
 import { ASSIGNEE_ALL, ASSIGNEE_NONE, type BugFilterState, BugFilters } from "./bugFilters"
 import { BugStats } from "./bugStats"
 
@@ -24,15 +21,16 @@ const BugIcon = () => (
   </svg>
 )
 
-type Props = { project: Project }
+type Props = { view: ProjectView; project: Project }
 
-/** Дошка багів: тріаж New → Triage → In Progress → Fixed → Verified, сортування за пріоритетом */
-export const BugBoard = ({ project }: Props) => {
-  const [issues, setIssues] = useState<Issue[]>(bugIssues)
+export const BugBoard = ({ view, project }: Props) => {
+  const { issues, stages: bugStages, members, currentUserId } = view
+  const intakeStageId = bugStages[0]?.id
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState(initialFilters)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [createDefaults, setCreateDefaults] = useState<NewIssueDefaults | null>(null)
+  const [openIssueId, setOpenIssueId] = useState<string | null>(null)
 
   const visibleIssues = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -50,29 +48,19 @@ export const BugBoard = ({ project }: Props) => {
         return !q || i.title.toLowerCase().includes(q) || i.key.toLowerCase().includes(q)
       })
       .sort(byPriority)
-  }, [issues, search, filters])
+  }, [issues, search, filters, currentUserId])
 
   const draggingIssue = issues.find((i) => i.id === draggingId)
 
+  const canDrag = (issue: Issue) => view.canChangeStatus(issue.assignee?.id)
+
   const moveIssue = (issueId: string, stageId: string) => {
-    const done = bugStages.find((s) => s.id === stageId)?.isDone ?? false
-    setIssues((prev) => prev.map((i) => (i.id === issueId ? { ...i, stageId, done } : i)))
+    const issue = issues.find((i) => i.id === issueId)
+    if (issue && canDrag(issue)) view.moveToStage(issueId, stageId)
     setDraggingId(null)
   }
 
-  const addIssue = (values: NewIssueValues) =>
-    setIssues((prev) => [
-      ...prev,
-      buildIssue(values, {
-        issues: prev,
-        projectKey: project.key,
-        members: projectMembers,
-        stages: bugStages,
-      }),
-    ])
-
-  // Новий баг — завжди тип Bug і колонка New
-  const openCreate = () => setCreateDefaults({ type: "bug", stageId: BUG_INTAKE_STAGE })
+  const openCreate = () => setCreateDefaults({ type: "bug", stageId: intakeStageId })
 
   return (
     <div className="flex min-w-0 flex-col">
@@ -84,10 +72,13 @@ export const BugBoard = ({ project }: Props) => {
         search={search}
         onSearchChange={setSearch}
         onCreate={openCreate}
+        showCreate={view.canEdit}
         createLabel="Повідомити про баг"
         createIcon={<BugIcon />}
         createVariant="danger"
       />
+
+      <ErrorBanner error={view.error} />
 
       <CreateIssueModal
         open={createDefaults !== null}
@@ -95,11 +86,18 @@ export const BugBoard = ({ project }: Props) => {
         project={project}
         nextKey={nextIssueKey(issues, project.key)}
         stages={bugStages}
-        members={projectMembers}
+        members={members}
         currentUserId={currentUserId}
         epics={[]}
         defaults={createDefaults ?? undefined}
-        onCreate={addIssue}
+        onCreate={view.createIssue}
+      />
+
+      <IssueDetailModal
+        issueId={openIssueId}
+        onClose={() => setOpenIssueId(null)}
+        view={view}
+        project={project}
       />
 
       <div className="flex min-w-0 flex-col gap-[18px] px-8 py-6">
@@ -112,10 +110,10 @@ export const BugBoard = ({ project }: Props) => {
               Нові баги потрапляють у New, після тріажу — в роботу. Сортування за пріоритетом.
             </p>
           </div>
-          <BugStats issues={issues} />
+          <BugStats issues={issues} stages={bugStages} />
         </div>
 
-        <BugFilters members={projectMembers} value={filters} onChange={setFilters} />
+        <BugFilters members={members} value={filters} onChange={setFilters} />
 
         <div className="overflow-x-auto pb-2">
           <div className="flex min-w-min items-start gap-3.5">
@@ -124,12 +122,17 @@ export const BugBoard = ({ project }: Props) => {
                 key={stage.id}
                 stage={stage}
                 issues={visibleIssues.filter((i) => i.stageId === stage.id)}
-                canDrop={!!draggingIssue && draggingIssue.stageId !== stage.id}
+                canDrop={
+                  !!draggingIssue && canDrag(draggingIssue) && draggingIssue.stageId !== stage.id
+                }
+                canDrag={canDrag}
+                showLocks={view.canEdit}
                 onDropIssue={(id) => moveIssue(id, stage.id)}
-                onCreate={stage.id === BUG_INTAKE_STAGE ? openCreate : undefined}
+                onCreate={view.canEdit && stage.id === intakeStageId ? openCreate : undefined}
                 draggingId={draggingId}
                 onDragStart={setDraggingId}
                 onDragEnd={() => setDraggingId(null)}
+                onOpen={setOpenIssueId}
               />
             ))}
           </div>

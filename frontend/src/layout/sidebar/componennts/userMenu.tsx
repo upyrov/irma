@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import { useLogout, useMe } from "#/api/hooks/useAuth"
 import { User } from "./user"
 
@@ -6,9 +6,9 @@ const iconButtonClass =
   "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted hover:bg-hover hover:text-ink disabled:opacity-50"
 
 export const UserMenu = () => {
-  // undefined — ще завантажується, null — гість
   const { data: user } = useMe()
   const logout = useLogout()
+  const navigate = useNavigate()
 
   return (
     <div className="mt-auto flex items-center gap-2.5 border-t border-border p-2.5">
@@ -28,8 +28,11 @@ export const UserMenu = () => {
           aria-label="Вийти"
           title="Вийти"
           disabled={logout.isPending}
-          // Лишаємося на сторінці — сайдбар сам покаже «Гість»
-          onClick={() => logout.mutate()}
+          onClick={() =>
+            logout.mutate(undefined, {
+              onSettled: () => navigate({ to: "/login", replace: true }),
+            })
+          }
           className={iconButtonClass}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">

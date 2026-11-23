@@ -35,7 +35,6 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   )
 }
 
-/** Заголовок колонки (uppercase, приглушений) */
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th

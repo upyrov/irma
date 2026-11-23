@@ -35,14 +35,16 @@ export const ActiveSprintBanner = ({
       >
         Відкрити дошку
       </Link>
-      <Button
-        variant="secondary"
-        size="xs"
-        onClick={onComplete}
-        className="border-success px-3.5 text-success-text hover:bg-success-bg"
-      >
-        Завершити спринт
-      </Button>
+      {onComplete && (
+        <Button
+          variant="secondary"
+          size="xs"
+          onClick={onComplete}
+          className="border-success px-3.5 text-success-text hover:bg-success-bg"
+        >
+          Завершити спринт
+        </Button>
+      )}
     </div>
   )
 }

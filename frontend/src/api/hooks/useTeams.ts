@@ -5,49 +5,55 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
-import type { Guid } from "#/types/api"
+import type { Guid, TeamDto } from "#/types/api"
 import { queryKeys } from "../queryKeys"
-import { teamsApi } from "../teams"
-
-// ── Запити ──
+import { errorMessage } from "./useAuth"
+import { MIN_SEARCH_LENGTH, teamsApi } from "../teams"
 
 export const teamsQueryOptions = queryOptions({
   queryKey: queryKeys.teams.list,
   queryFn: teamsApi.list,
 })
 
-/** GET /api/teams — команди поточного користувача */
 export const useTeams = () => useQuery(teamsQueryOptions)
 
-/** GET /api/teams/search-users — пошук стартує з 2 символів; поки вводиш, лишаються старі результати */
-export const useSearchUsers = (search: string) => {
+export const useSearchUsers = (teamId: Guid, search: string) => {
   const q = search.trim()
   return useQuery({
-    queryKey: queryKeys.teams.searchUsers(q),
-    queryFn: () => teamsApi.searchUsers(q),
-    enabled: q.length >= 2,
+    queryKey: queryKeys.teams.searchUsers(teamId, q),
+    queryFn: () => teamsApi.searchUsers(teamId, q),
+    enabled: !!teamId && q.length >= MIN_SEARCH_LENGTH,
     placeholderData: keepPreviousData,
     staleTime: 30_000,
   })
 }
 
-// ── Зміни ──
-
-/** POST /api/teams */
 export const useCreateTeam = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: teamsApi.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.teams.list }),
+    onSuccess: (team) => {
+      queryClient.setQueryData<TeamDto[]>(queryKeys.teams.list, (old) =>
+        old ? [...old.filter((t) => t.id !== team.id), team] : old,
+      )
+      queryClient.invalidateQueries({ queryKey: queryKeys.teams.list })
+    },
   })
 }
 
-/** POST /api/teams/{id}/members/{userId} */
 export const useAddTeamMember = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ teamId, userId }: { teamId: Guid; userId: Guid }) =>
       teamsApi.addMember(teamId, userId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.teams.list }),
+    onSuccess: (team) => {
+      queryClient.setQueryData<TeamDto[]>(queryKeys.teams.list, (old) =>
+        old?.map((t) => (t.id === team.id ? team : t)),
+      )
+      queryClient.invalidateQueries({ queryKey: queryKeys.teams.list })
+      queryClient.invalidateQueries({ queryKey: ["teams", "search-users"] })
+    },
   })
 }
+
+export const teamErrorMessage = (error: unknown) => errorMessage(error)
