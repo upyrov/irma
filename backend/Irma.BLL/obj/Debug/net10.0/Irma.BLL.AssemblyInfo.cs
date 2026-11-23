@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Irma.BLL")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fc0b75efd17c8b9bdee7a80fe4db0dc51afb405d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b65a2fdd3866086391ec4603d639ef4f074a68ba")]
 [assembly: System.Reflection.AssemblyProductAttribute("Irma.BLL")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Irma.BLL")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

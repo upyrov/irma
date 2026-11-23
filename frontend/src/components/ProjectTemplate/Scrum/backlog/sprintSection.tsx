@@ -1,4 +1,4 @@
-import { Pencil, Play } from "lucide-react"
+import { Play } from "lucide-react"
 import { useState } from "react"
 import { Badge, SprintStatusBadge } from "#/components/ui/badge"
 import { Button } from "#/components/ui/button"
@@ -14,7 +14,6 @@ type Props = IssueDragProps & {
   epicsById: Record<string, Epic>
   canDrop: boolean
   onDropIssue: (issueId: string) => void
-  onEdit?: () => void
   onStart?: () => void
   startHint?: string
 }
@@ -25,7 +24,6 @@ export const SprintSection = ({
   epicsById,
   canDrop,
   onDropIssue,
-  onEdit,
   onStart,
   startHint = "Спершу завершіть активний спринт",
   ...drag
@@ -54,15 +52,6 @@ export const SprintSection = ({
         <Badge size="count" className="px-2">
           {totalSp} SP
         </Badge>
-        <Button
-          variant="secondary"
-          size="icon"
-          aria-label="Редагувати спринт"
-          onClick={onEdit}
-          className="rounded-lg px-0 text-text-2"
-        >
-          <Pencil className="size-4" />
-        </Button>
         <Button
           size="xs"
           onClick={onStart}

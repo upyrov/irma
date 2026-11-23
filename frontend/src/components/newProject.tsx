@@ -6,6 +6,7 @@ import { useTeams } from "#/api/hooks/useTeams";
 import { projectKeyOf } from "#/api/adapters";
 import type { ProjectTemplate } from "#/types/api";
 import { Button } from "./ui/button";
+import { Spinner } from "./ui/spinner";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
@@ -25,6 +26,8 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
     const [template, setTemplate] = useState<ProjectTemplate>("Scrum")
     const [touched, setTouched] = useState(false)
     const [creatingTeam, setCreatingTeam] = useState(false)
+    const [redirecting, setRedirecting] = useState(false)
+    const busy = createProject.isPending || redirecting
     const key = name.trim() ? projectKeyOf(name.trim()) : null
 
     const submit = (e: FormEvent) => {
@@ -34,12 +37,16 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
         createProject.mutate(
             { name: name.trim(), teamId, template, description: description.trim() || null },
             {
-                onSuccess: (project) => {
-                    setIsOpenNewProject(false)
-                    navigate({
-                        to: template === "Scrum" ? "/projects/$projectId/backlog" : "/projects/$projectId/board",
-                        params: { projectId: project.id },
-                    })
+                onSuccess: async (project) => {
+                    setRedirecting(true)
+                    try {
+                        await navigate({
+                            to: template === "Scrum" ? "/projects/$projectId/backlog" : "/projects/$projectId/board",
+                            params: { projectId: project.id },
+                        })
+                    } finally {
+                        setIsOpenNewProject(false)
+                    }
                 },
             },
         )
@@ -52,7 +59,8 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
     role="dialog"
     aria-modal="true"
     aria-labelledby="cp-title"
-    className="flex w-full max-w-[760px] flex-col rounded-[18px] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.3)]"
+    aria-busy={busy}
+    className="relative flex w-full max-w-[760px] flex-col rounded-[18px] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.3)]"
   >
     <div className="flex items-start justify-between gap-4 px-7 pt-6">
       <div>
@@ -170,13 +178,23 @@ export const NewProject = ({setIsOpenNewProject}: Props) => {
     )}
 
     <div className="flex flex-wrap justify-end gap-2.5 rounded-b-[18px] border-t border-border bg-[#FAFBFC] px-7 py-4">
-        <Button type="button" variant={"secondary"} onClick={() => setIsOpenNewProject(false)}>
+        <Button type="button" variant={"secondary"} disabled={busy} onClick={() => setIsOpenNewProject(false)}>
             Скасувати
         </Button>
-        <Button type="submit" disabled={createProject.isPending}>
-            Створити проєкт
+        <Button type="submit" disabled={busy}>
+            {busy && <Spinner className="size-4 text-current" label="Створюємо проєкт" />}
+            {busy ? "Створюємо…" : "Створити проєкт"}
         </Button>
     </div>
+
+    {busy && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-[18px] bg-white/80 backdrop-blur-[2px] animate-in fade-in duration-200">
+            <Spinner className="size-10" label="Створюємо проєкт" />
+            <p className="m-0 text-sm font-semibold text-text-2" aria-live="polite">
+                Створюємо проєкт…
+            </p>
+        </div>
+    )}
   </form>
             {creatingTeam && (
                 <NewTeam onClose={() => setCreatingTeam(false)} onCreated={(team) => setTeamId(team.id)} />

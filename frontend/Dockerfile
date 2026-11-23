@@ -10,6 +10,10 @@ RUN npm ci
 # Copy the rest of the application source code
 COPY . .
 
+# API URL is inlined into the client bundle at build time
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build the project (Nitro will generate the .output folder)
 RUN npm run build
 

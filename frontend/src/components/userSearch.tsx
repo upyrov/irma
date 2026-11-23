@@ -6,7 +6,10 @@ import { MIN_SEARCH_LENGTH } from "#/api/teams"
 import type { Guid, UserDto } from "#/types/api"
 
 type Props = {
-  teamId: Guid
+  /** Серверний пошук користувачів, яких ще немає в цій команді */
+  teamId?: Guid
+  /** Локальний пошук по готовому списку (напр. учасники команди проєкту) — замість серверного */
+  candidates?: UserDto[]
   excludeIds?: Guid[]
   onPick: (user: UserDto) => void
   actionLabel?: string
@@ -16,8 +19,21 @@ type Props = {
   label?: string
 }
 
+const SEARCH_LIMIT = 20
+
+// Та сама логіка, що й на бекенді: підрядок без урахування регістру, коротші username вище
+const searchLocal = (users: UserDto[], q: string) => {
+  const needle = q.toLowerCase()
+  if (needle.length < MIN_SEARCH_LENGTH) return []
+  return users
+    .filter((u) => u.username.toLowerCase().includes(needle))
+    .sort((a, b) => a.username.length - b.username.length || a.username.localeCompare(b.username))
+    .slice(0, SEARCH_LIMIT)
+}
+
 export const UserSearch = ({
   teamId,
+  candidates,
   excludeIds = [],
   onPick,
   actionLabel = "Додати",
@@ -29,10 +45,16 @@ export const UserSearch = ({
   const inputId = useId()
   const listId = useId()
   const [search, setSearch] = useState("")
-  const users = useSearchUsers(teamId, search)
   const q = search.trim()
+  const isLocal = candidates !== undefined
+  const remote = useSearchUsers(isLocal ? "" : (teamId ?? ""), search)
   const active = q.length >= MIN_SEARCH_LENGTH
-  const results = (users.data ?? []).filter((u) => !excludeIds.includes(u.id))
+  const found = isLocal ? searchLocal(candidates, q) : (remote.data ?? [])
+  const results = found.filter((u) => !excludeIds.includes(u.id))
+  const isPending = !isLocal && remote.isPending
+  const isFetching = !isLocal && remote.isFetching
+  const error = isLocal ? null : remote.error
+  const isSuccess = isLocal || remote.isSuccess
 
   const pick = (user: UserDto) => {
     onPick(user)
@@ -86,18 +108,18 @@ export const UserSearch = ({
       {active && (
         <ul
           id={listId}
-          aria-busy={users.isFetching}
+          aria-busy={isFetching}
           className="flex max-h-48 flex-col overflow-y-auto rounded-[10px] border border-border bg-white p-1"
         >
-          {users.isPending && (
+          {isPending && (
             <li className="flex items-center gap-2 px-2 py-1.5 text-[13px] text-muted">
               <Spinner className="size-3.5" label="Пошук" /> Пошук…
             </li>
           )}
-          {users.error && (
-            <li className="px-2 py-1.5 text-[13px] text-danger-text">{teamErrorMessage(users.error)}</li>
+          {error && (
+            <li className="px-2 py-1.5 text-[13px] text-danger-text">{teamErrorMessage(error)}</li>
           )}
-          {users.isSuccess && results.length === 0 && (
+          {isSuccess && results.length === 0 && (
             <li className="px-2 py-1.5 text-[13px] text-muted">Нікого не знайдено за «{q}»</li>
           )}
           {results.map((u) => (
