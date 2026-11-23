@@ -1,18 +1,32 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState } from 'react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { type FormEvent, useState } from 'react'
+import { safeRedirect } from '#/api/guards'
+import { errorMessage, useLogin } from '#/api/hooks/useAuth'
 
 export const Route = createFileRoute('/login')({
+  // ?redirect=/projects/1/board — куди повернути після входу
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+  }),
   component: RouteComponent,
 })
 
 function RouteComponent() {
-    const [email, setEmail] = useState('')
+    const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-    const [error, setError] = useState('')
+    const { redirect } = Route.useSearch()
+    const navigate = useNavigate()
+    const login = useLogin()
 
-    const handleSubmit = () => {
-        setError('')
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault() // без цього браузер перезавантажить сторінку
+        login.mutate(
+          { username: username.trim(), password },
+          { onSuccess: () => navigate({ href: safeRedirect(redirect), replace: true }) }
+        )
     }
+
+    const error = errorMessage(login.error)
 
 return (
     <div className="flex min-h-screen flex-wrap bg-page font-['Inter',system-ui,sans-serif] text-ink">
@@ -64,16 +78,17 @@ return (
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="login-email" className="text-sm font-semibold">
-              Email
+            <label htmlFor="login-username" className="text-sm font-semibold">
+              Ім'я користувача
             </label>
             <input
-              id="login-email"
-              type="email"
-              placeholder="johnpork@gmail.com"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="login-username"
+              type="text"
+              placeholder="artem.b"
+              autoComplete="username"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="h-11 rounded-[10px] border border-border-input bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
             />
           </div>
@@ -87,6 +102,7 @@ return (
               type="password"
               placeholder="••••••••"
               autoComplete="current-password"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-11 rounded-[10px] border border-border-input bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
@@ -105,9 +121,10 @@ return (
 
           <button
             type="submit"
-            className="h-[46px] rounded-[10px] bg-primary text-[15px] font-semibold text-white hover:bg-primary-hover"
+            disabled={login.isPending}
+            className="h-[46px] cursor-pointer rounded-[10px] bg-primary text-[15px] font-semibold text-white hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60"
           >
-            Увійти
+            {login.isPending ? 'Входимо…' : 'Увійти'}
           </button>
 
           <p className="text-center text-sm text-muted">

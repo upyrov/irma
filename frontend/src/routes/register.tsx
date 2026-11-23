@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState } from 'react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { type FormEvent, useState } from 'react'
+import { errorMessage, useRegister } from '#/api/hooks/useAuth'
 
 export const Route = createFileRoute('/register')({
   component: RouteComponent,
@@ -7,13 +8,21 @@ export const Route = createFileRoute('/register')({
 
 function RouteComponent() {
     const [username, setUsername] = useState('')
-    const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [error, setError] = useState('')
-  
-  const handleSubmit = () => {
-    setError('')
+    const navigate = useNavigate()
+    const register = useRegister()
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    register.mutate(
+      { username: username.trim(), password },
+      // Бекенд одразу логінить після реєстрації
+      { onSuccess: () => navigate({ to: '/', replace: true }) }
+    )
   }
+
+  const error = errorMessage(register.error)
+
     return (
     <div className="flex min-h-screen flex-wrap bg-page font-['Inter',system-ui,sans-serif] text-ink">
       <div className="box-border flex flex-[1_1_520px] flex-col justify-between gap-12 bg-ink px-14 py-12 text-white">
@@ -56,14 +65,16 @@ function RouteComponent() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="login-user" className="text-sm font-semibold">
-              Ім'я
+            <label htmlFor="register-username" className="text-sm font-semibold">
+              Ім'я користувача
             </label>
             <input
-              id="login-user"
+              id="register-username"
               type="text"
-              placeholder="John"
+              placeholder="john.pork"
               autoComplete="username"
+              required
+              minLength={3}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="h-11 rounded-[10px] border border-border-input bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
@@ -71,28 +82,16 @@ function RouteComponent() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="login-email" className="text-sm font-semibold">
-              Email
+            <label htmlFor="register-pass" className="text-sm font-semibold">
+              Пароль <span className="font-normal text-muted">— щонайменше 8 символів</span>
             </label>
             <input
-              id="login-email"
-              type="email"
-              placeholder="johnpork@gmail.com"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-11 rounded-[10px] border border-border-input bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="login-pass" className="text-sm font-semibold">
-              Пароль
-            </label>
-            <input
-              id="login-pass"
+              id="register-pass"
               type="password"
               placeholder="••••••••"
-              autoComplete="current-password"
+              autoComplete="new-password"
+              required
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-11 rounded-[10px] border border-border-input bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/20"
@@ -111,9 +110,10 @@ function RouteComponent() {
 
           <button
             type="submit"
-            className="h-[46px] rounded-[10px] bg-primary text-[15px] font-semibold text-white hover:bg-primary-hover"
+            disabled={register.isPending}
+            className="h-[46px] cursor-pointer rounded-[10px] bg-primary text-[15px] font-semibold text-white hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60"
           >
-            Увійти
+            {register.isPending ? 'Створюємо акаунт…' : 'Зареєструватися'}
           </button>
 
           <p className="text-center text-sm text-muted">

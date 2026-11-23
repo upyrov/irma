@@ -1,3 +1,4 @@
+import { requireAuth } from '#/api/guards'
 import { SidebarShell } from '#/layout/sidebar/sidebar'
 import { Logo } from '#/layout/sidebar/componennts/logo';
 import { HomeProjectsNav } from '#/layout/sidebar/componennts/homeProjetcsNav';
@@ -8,7 +9,12 @@ import { HomeProjectsTeamList } from '#/layout/sidebar/componennts/homeProjectsT
 import { useState } from 'react';
 import { NewProject } from '#/components/newProject';
 
-export const Route = createFileRoute('/')({ component: Home })
+export const Route = createFileRoute('/')({
+  // Сесія — у HttpOnly cookie браузера, тож перевіряємо її в браузері, а не під час SSR
+  ssr: false,
+  beforeLoad: requireAuth,
+  component: Home,
+})
 
 
 function Home() {

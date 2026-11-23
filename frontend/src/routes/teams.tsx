@@ -1,3 +1,4 @@
+import { requireAuth } from '#/api/guards'
 import { SidebarShell } from '#/layout/sidebar/sidebar'
 import { HomeProjectsNav } from '#/layout/sidebar/componennts/homeProjetcsNav';
 import { Logo } from '#/layout/sidebar/componennts/logo';
@@ -7,6 +8,9 @@ import { teams } from '#/tempData';
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/teams')({
+  // Сесія — у HttpOnly cookie браузера, тож перевіряємо її в браузері, а не під час SSR
+  ssr: false,
+  beforeLoad: requireAuth,
   component: RouteComponent,
 })
 
